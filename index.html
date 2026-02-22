@@ -2,1684 +2,825 @@
 
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TERM — Messenger</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <style>/* ══════════════════════════════════════
-   TERM · INTERNAL MESSENGER
-   Palette: #000 #fff + grays only
-   Font: IBM Plex Mono
-══════════════════════════════════════ */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
-
-body {
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 13px;
-line-height: 1.65;
-background: #000000;
-color: #ffffff;
--webkit-font-smoothing: antialiased;
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: #000000; }
-::-webkit-scrollbar-thumb { background: #333333; }
-::selection { background: #ffffff; color: #000000; }
-
-a { color: #cccccc; }
-a:hover { color: #ffffff; }
-
-/* ── SCREENS ── */
-.screen { display: none; height: 100vh; width: 100%; }
-.screen.active { display: flex; }
-
-/* ══════════════════════════════════════
-AUTH
-══════════════════════════════════════ */
-#screen-auth {
-align-items: center;
-justify-content: center;
-background: #000000;
-}
-
-.auth-wrap {
-width: 360px;
-animation: reveal .45s cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes reveal {
-from { opacity: 0; transform: translateY(10px); }
-to   { opacity: 1; transform: none; }
-}
-
-.auth-header {
-border-bottom: 1px solid #2a2a2a;
-padding-bottom: 18px;
-margin-bottom: 28px;
-}
-
-.logo {
-font-size: 26px;
-font-weight: 600;
-letter-spacing: 8px;
-}
-
-.logo-sub {
-font-size: 10px;
-color: #555555;
-letter-spacing: 2px;
-margin-top: 4px;
-}
-
-.auth-panel { display: none; flex-direction: column; gap: 18px; }
-.auth-panel.active { display: flex; }
-
-.panel-label {
-font-size: 9px;
-letter-spacing: 3px;
-color: #555555;
-margin-bottom: 2px;
-}
-
-.field-group { display: flex; flex-direction: column; gap: 5px; }
-.field-label { font-size: 9px; letter-spacing: 2px; color: #555555; }
-
-.field-input {
-width: 100%;
-background: #0d0d0d;
-border: 1px solid #1e1e1e;
-border-bottom: 1px solid #333333;
-color: #ffffff;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 13px;
-padding: 10px 12px;
-outline: none;
-transition: border-bottom-color .15s;
-}
-
-.field-input:focus { border-bottom-color: #ffffff; background: #111111; }
-.field-input::placeholder { color: #333333; }
-
-.avatar-grid { display: flex; gap: 6px; flex-wrap: wrap; }
-.av-btn {
-background: #111111;
-border: 1px solid #1e1e1e;
-color: #888888;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 11px;
-padding: 6px 9px;
-cursor: pointer;
-letter-spacing: 1px;
-transition: all .1s;
-}
-.av-btn:hover { background: #1a1a1a; color: #ffffff; }
-.av-btn.active { background: #ffffff; color: #000000; border-color: #ffffff; }
-
-.auth-actions { display: flex; flex-direction: column; gap: 8px; }
-
-.btn-primary {
-background: #ffffff;
-border: 1px solid #ffffff;
-color: #000000;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 12px;
-font-weight: 600;
-letter-spacing: 3px;
-padding: 11px;
-cursor: pointer;
-transition: all .15s;
-width: 100%;
-}
-.btn-primary:hover { background: #000000; color: #ffffff; }
-
-.btn-ghost {
-background: none;
-border: none;
-color: #555555;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 11px;
-padding: 5px 0;
-cursor: pointer;
-text-align: left;
-transition: color .15s;
-}
-.btn-ghost:hover { color: #cccccc; }
-
-.auth-error {
-font-size: 11px;
-color: #cccccc;
-border-left: 2px solid #ffffff;
-padding: 6px 10px;
-background: #111111;
-line-height: 1.5;
-}
-
-.auth-loader {
-font-size: 11px;
-color: #555555;
-letter-spacing: 1px;
-padding: 8px 0;
-}
-
-.auth-footer {
-margin-top: 32px;
-font-size: 9px;
-letter-spacing: 1.5px;
-color: #333333;
-border-top: 1px solid #1e1e1e;
-padding-top: 14px;
-}
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-.blink-cursor { animation: blink 1.2s step-end infinite; }
-
-/* ══════════════════════════════════════
-CHAT SCREEN
-══════════════════════════════════════ */
-#screen-chat { flex-direction: row; overflow: hidden; }
-
-/* ── SIDEBAR ── */
-#sidebar {
-width: 230px;
-min-width: 230px;
-height: 100%;
-background: #0d0d0d;
-border-right: 1px solid #1e1e1e;
-display: flex;
-flex-direction: column;
-overflow: hidden;
-transition: transform .25s cubic-bezier(.16,1,.3,1);
-}
-
-.sb-top {
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 13px 15px;
-border-bottom: 1px solid #1e1e1e;
-}
-
-.brand { font-size: 13px; font-weight: 600; letter-spacing: 5px; }
-
-.sb-user {
-display: flex;
-align-items: center;
-gap: 9px;
-padding: 12px 15px;
-border-bottom: 1px solid #1e1e1e;
-position: relative;
-}
-
-.sb-av {
-font-size: 10px;
-letter-spacing: 1px;
-background: #1a1a1a;
-border: 1px solid #1e1e1e;
-padding: 4px 5px;
-flex-shrink: 0;
-color: #ffffff;
-}
-
-.sb-name  { font-size: 12px; font-weight: 600; }
-.sb-email { font-size: 10px; color: #555555; word-break: break-all; }
-
-.online-dot {
-width: 5px; height: 5px;
-background: #ffffff;
-border-radius: 50%;
-position: absolute;
-right: 13px; top: 50%;
-transform: translateY(-50%);
-}
-
-.sb-section { padding: 14px 0 6px; border-bottom: 1px solid #1e1e1e; flex-shrink: 0; }
-.sb-label { font-size: 9px; letter-spacing: 3px; color: #333333; padding: 0 15px 8px; }
-.sb-list  { list-style: none; }
-
-.sb-item {
-display: flex;
-align-items: center;
-gap: 6px;
-padding: 7px 15px;
-cursor: pointer;
-color: #555555;
-font-size: 12px;
-transition: all .1s;
-position: relative;
-}
-.sb-item:hover { background: #111111; color: #cccccc; }
-.sb-item.active { color: #ffffff; background: #1a1a1a; }
-.sb-item.active::before { content:’’; position:absolute; left:0; top:0; bottom:0; width:2px; background:#ffffff; }
-.ol-item { cursor: default; }
-.ol-item:hover { background: transparent; }
-
-.ch-hash { color: #333333; font-size: 11px; }
-.ch-badge {
-margin-left: auto;
-background: #ffffff;
-color: #000000;
-font-size: 9px;
-font-weight: 700;
-padding: 1px 5px;
-}
-
-.sb-add {
-display: block;
-margin: 8px 15px 2px;
-width: calc(100% - 30px);
-background: none;
-border: 1px solid #1e1e1e;
-border-style: dashed;
-color: #333333;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 11px;
-padding: 6px 10px;
-cursor: pointer;
-text-align: left;
-transition: all .15s;
-}
-.sb-add:hover { color: #ffffff; border-color: #333333; }
-
-.sb-footer {
-margin-top: auto;
-padding: 10px 15px;
-border-top: 1px solid #1e1e1e;
-display: flex;
-flex-direction: column;
-gap: 3px;
-}
-
-.sb-stat { display: flex; justify-content: space-between; font-size: 9px; }
-.sk { color: #333333; letter-spacing: 1px; }
-.sv { color: #888888; }
-
-/* ── ICON BUTTON ── */
-.icon-btn {
-background: none;
-border: none;
-color: #555555;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 15px;
-width: 30px; height: 30px;
-display: flex; align-items: center; justify-content: center;
-cursor: pointer;
-transition: color .1s;
-flex-shrink: 0;
-}
-.icon-btn:hover { color: #ffffff; }
-
-/* ── MAIN ── */
-#main {
-flex: 1;
-display: flex;
-flex-direction: column;
-overflow: hidden;
-background: #000000;
-position: relative;
-}
-
-/* ── TOPBAR ── */
-#topbar {
-height: 44px;
-border-bottom: 1px solid #1e1e1e;
-display: flex;
-align-items: center;
-padding: 0 15px;
-gap: 10px;
-flex-shrink: 0;
-background: #0d0d0d;
-}
-
-.tb-left { display: flex; align-items: baseline; gap: 6px; flex: 1; min-width: 0; }
-.tb-hash { color: #333333; }
-#tb-name { font-size: 13px; font-weight: 600; }
-.tb-sep  { color: #333333; font-size: 11px; }
-.tb-desc { font-size: 11px; color: #555555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tb-right { display: flex; gap: 2px; flex-shrink: 0; }
-
-/* ── SEARCH ── */
-#searchbar {
-display: flex;
-align-items: center;
-gap: 10px;
-padding: 7px 15px;
-border-bottom: 1px solid #1e1e1e;
-background: #111111;
-flex-shrink: 0;
-}
-
-.s-prompt { font-size: 11px; color: #333333; white-space: nowrap; }
-
-#search-inp {
-flex: 1;
-background: none;
-border: none;
-color: #ffffff;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 13px;
-outline: none;
-}
-#search-inp::placeholder { color: #333333; }
-
-/* ── MESSAGES ── */
-#messages {
-flex: 1;
-overflow-y: auto;
-padding: 18px 0 6px;
-display: flex;
-flex-direction: column;
-}
-
-.day-sep {
-display: flex;
-align-items: center;
-gap: 12px;
-padding: 10px 20px;
-font-size: 9px;
-letter-spacing: 2px;
-color: #333333;
-}
-.day-sep::before, .day-sep::after {
-content: ‘’; flex: 1; height: 1px; background: #1a1a1a;
-}
-
-.msg {
-display: flex;
-gap: 11px;
-padding: 5px 20px;
-transition: background .08s;
-position: relative;
-}
-.msg:hover { background: #0d0d0d; }
-.msg:hover .msg-tools { opacity: 1; }
-
-@keyframes msg-in {
-from { opacity: 0; transform: translateY(3px); }
-to   { opacity: 1; transform: none; }
-}
-
-.msg-av {
-font-size: 10px;
-letter-spacing: 1px;
-color: #333333;
-flex-shrink: 0;
-width: 34px;
-padding-top: 3px;
-text-align: center;
-font-weight: 500;
-}
-
-.msg-body { flex: 1; min-width: 0; }
-
-.msg-meta {
-display: flex;
-align-items: baseline;
-gap: 8px;
-margin-bottom: 2px;
-}
-
-.msg-name { font-size: 12px; font-weight: 600; color: #ffffff; }
-.msg.own .msg-name { color: #cccccc; }
-.msg-time { font-size: 9px; color: #333333; }
-
-.msg-text {
-color: #cccccc;
-font-size: 13px;
-line-height: 1.7;
-white-space: pre-wrap;
-word-break: break-word;
-}
-
-.msg-text code {
-background: #1a1a1a;
-border: 1px solid #1e1e1e;
-padding: 1px 5px;
-font-size: 11px;
-color: #ffffff;
-}
-
-.msg-text pre {
-background: #111111;
-border: 1px solid #1e1e1e;
-border-left: 2px solid #333333;
-padding: 10px 12px;
-overflow-x: auto;
-margin-top: 6px;
-}
-
-.msg-text pre code { background: none; border: none; padding: 0; font-size: 12px; }
-
-.msg.sys .msg-text { color: #333333; font-style: italic; font-size: 11px; }
-.msg.action .msg-text { color: #888888; font-style: italic; }
-
-.msg-tools {
-position: absolute;
-right: 15px; top: 50%;
-transform: translateY(-50%);
-opacity: 0;
-transition: opacity .12s;
-}
-
-.msg-tool {
-background: #1a1a1a;
-border: 1px solid #1e1e1e;
-color: #555555;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 10px;
-padding: 3px 8px;
-cursor: pointer;
-transition: all .1s;
-}
-.msg-tool:hover { background: #ffffff; color: #000000; border-color: #ffffff; }
-
-/* ── IMAGE ── */
-.msg-img {
-display: block;
-max-width: 280px;
-max-height: 200px;
-margin-top: 8px;
-border: 1px solid #2a2a2a;
-cursor: pointer;
-object-fit: cover;
-transition: border-color .15s;
-}
-.msg-img:hover { border-color: #ffffff; }
-
-/* ── FILE ── */
-.msg-file {
-display: inline-flex;
-align-items: center;
-gap: 10px;
-margin-top: 8px;
-padding: 10px 14px;
-background: #111111;
-border: 1px solid #1e1e1e;
-border-left: 2px solid #333333;
-cursor: pointer;
-transition: all .15s;
-max-width: 280px;
-}
-.msg-file:hover { border-left-color: #ffffff; background: #1a1a1a; }
-
-.mf-tag  { font-size: 10px; letter-spacing: 1px; color: #555555; background: #1a1a1a; padding: 2px 5px; border: 1px solid #1e1e1e; }
-.mf-name { display: block; font-size: 12px; color: #ffffff; font-weight: 600; }
-.mf-size { display: block; font-size: 10px; color: #555555; }
-.mf-dl   { font-size: 14px; color: #555555; margin-left: auto; }
-
-/* ── TYPING ── */
-#typing-row {
-display: flex;
-align-items: center;
-gap: 8px;
-padding: 3px 20px 3px 65px;
-font-size: 10px;
-color: #333333;
-flex-shrink: 0;
-}
-
-.t-dots { display: flex; gap: 3px; }
-.t-dots span { width: 3px; height: 3px; background: #333333; border-radius: 50%; animation: td 1.1s infinite; }
-.t-dots span:nth-child(2) { animation-delay: .18s; }
-.t-dots span:nth-child(3) { animation-delay: .36s; }
-@keyframes td { 0%,60%,100%{transform:translateY(0);opacity:.3} 30%{transform:translateY(-3px);opacity:1} }
-
-/* ── COMPOSER ── */
-#composer {
-border-top: 1px solid #1e1e1e;
-padding: 11px 15px;
-background: #0d0d0d;
-flex-shrink: 0;
-}
-
-#att-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
-
-.att-chip {
-display: flex;
-align-items: center;
-gap: 6px;
-background: #1a1a1a;
-border: 1px solid #1e1e1e;
-padding: 4px 8px;
-font-size: 11px;
-color: #888888;
-}
-
-.att-thumb { width: 34px; height: 34px; object-fit: cover; border: 1px solid #1e1e1e; }
-.att-tag   { font-size: 10px; letter-spacing: 1px; background: #222222; padding: 2px 5px; }
-.att-name  { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.att-rm    { background: none; border: none; color: #333333; cursor: pointer; font-size: 11px; transition: color .1s; }
-.att-rm:hover { color: #ffffff; }
-
-#composer-row {
-display: flex;
-align-items: flex-end;
-gap: 8px;
-background: #111111;
-border: 1px solid #1e1e1e;
-padding: 8px 10px;
-transition: border-color .15s;
-}
-#composer-row:focus-within { border-color: #333333; }
-
-.c-prompt {
-font-size: 11px;
-color: #333333;
-white-space: nowrap;
-flex-shrink: 0;
-padding-bottom: 1px;
-}
-
-#msg-inp {
-flex: 1;
-background: none;
-border: none;
-color: #ffffff;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 13px;
-outline: none;
-resize: none;
-max-height: 120px;
-overflow-y: auto;
-line-height: 1.65;
-}
-#msg-inp::placeholder { color: #333333; }
-
-.c-tools { display: flex; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-
-.tool-btn {
-background: none;
-border: 1px solid #1e1e1e;
-color: #555555;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 10px;
-padding: 5px 8px;
-cursor: pointer;
-letter-spacing: .5px;
-transition: all .1s;
-white-space: nowrap;
-}
-.tool-btn:hover { color: #ffffff; border-color: #333333; background: #1a1a1a; }
-
-.send-btn {
-background: #ffffff;
-border: 1px solid #ffffff;
-color: #000000;
-font-family: ‘IBM Plex Mono’, monospace;
-font-size: 15px;
-font-weight: 700;
-width: 32px; height: 32px;
-display: flex; align-items: center; justify-content: center;
-cursor: pointer;
-transition: all .1s;
-flex-shrink: 0;
-}
-.send-btn:hover { background: #000000; color: #ffffff; }
-.send-btn:active { transform: scale(.95); }
-
-.c-hint { margin-top: 6px; font-size: 9px; color: #333333; display: flex; gap: 10px; }
-
-kbd {
-background: #1a1a1a;
-border: 1px solid #1e1e1e;
-padding: 0 4px;
-font-size: 9px;
-font-family: ‘IBM Plex Mono’, monospace;
-color: #888888;
-}
-
-/* ══════════════════════════════════════
-OVERLAYS
-══════════════════════════════════════ */
-.overlay {
-position: fixed; inset: 0;
-display: flex; align-items: center; justify-content: center;
-z-index: 500;
-background: rgba(0,0,0,.75);
-backdrop-filter: blur(2px);
-animation: fade .15s ease;
-}
-@keyframes fade { from{opacity:0} to{opacity:1} }
-
-.overlay-box {
-background: #0d0d0d;
-border: 1px solid #2a2a2a;
-padding: 22px;
-width: 340px;
-max-width: calc(100vw - 32px);
-animation: slide-up .2s cubic-bezier(.16,1,.3,1);
-}
-@keyframes slide-up { from{transform:translateY(8px);opacity:0} to{transform:none;opacity:1} }
-
-.ov-title { font-size: 9px; letter-spacing: 3px; color: #333333; margin-bottom: 16px; }
-
-.cmd-table { border-collapse: collapse; width: 100%; margin-bottom: 18px; }
-.cmd-table tr + tr td { padding-top: 8px; }
-.ck { font-size: 12px; color: #ffffff; padding-right: 18px; white-space: nowrap; }
-.cv { font-size: 11px; color: #555555; }
-
-/* ── LIGHTBOX ── */
-#lightbox {
-position: fixed; inset: 0; z-index: 600;
-display: flex; align-items: center; justify-content: center;
-animation: fade .15s ease;
-}
-
-#lb-bg { position: absolute; inset: 0; background: rgba(0,0,0,.9); backdrop-filter: blur(4px); }
-
-#lb-inner {
-position: relative; z-index: 1;
-display: flex; flex-direction: column; align-items: center; gap: 8px;
-}
-
-#lb-img { max-width: 90vw; max-height: 85vh; border: 1px solid #2a2a2a; display: block; }
-#lb-meta { font-size: 10px; color: #333333; letter-spacing: 1px; }
-
-#lb-close {
-position: absolute; top: -14px; right: -14px;
-background: #1a1a1a; border: 1px solid #1e1e1e;
-color: #555555; font-family: ‘IBM Plex Mono’, monospace; font-size: 12px;
-width: 24px; height: 24px; cursor: pointer;
-display: flex; align-items: center; justify-content: center;
-transition: all .1s;
-}
-#lb-close:hover { background: #ffffff; color: #000000; }
-
-/* ── TOAST ── */
-#toast {
-position: fixed; bottom: 18px; right: 18px;
-background: #ffffff; color: #000000;
-font-family: ‘IBM Plex Mono’, monospace; font-size: 11px;
-padding: 9px 14px; z-index: 700;
-animation: toast-in .2s cubic-bezier(.16,1,.3,1);
-}
-@keyframes toast-in { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:none} }
-
-/* ── UTILS ── */
-.hidden { display: none !important; }
-.mobile-only { display: none; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 680px) {
-.mobile-only { display: flex; }
-.tb-desc { display: none; }
-
-#sidebar {
-position: fixed; left: 0; top: 0; bottom: 0; z-index: 300;
-transform: translateX(-100%);
-box-shadow: 4px 0 20px rgba(0,0,0,.6);
-}
-#sidebar.open { transform: translateX(0); }
-
-.auth-wrap { width: calc(100vw - 32px); }
-.msg-img { max-width: 200px; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TERM — Messenger</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#000;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px}
+.screen{display:none;height:100vh;width:100%}
+.screen.active{display:flex}
+#screen-auth{align-items:center;justify-content:center;background:#000}
+.auth-wrap{width:340px;padding:0 16px}
+.logo{font-size:28px;font-weight:600;letter-spacing:8px;margin-bottom:4px}
+.logo-sub{font-size:10px;color:#555;letter-spacing:2px;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid #1e1e1e}
+.auth-panel{display:none;flex-direction:column;gap:16px}
+.auth-panel.active{display:flex}
+.panel-label{font-size:9px;letter-spacing:3px;color:#555}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-label{font-size:9px;letter-spacing:2px;color:#555}
+.field-input{width:100%;background:#0d0d0d;border:1px solid #1e1e1e;border-bottom:1px solid #333;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;outline:none}
+.field-input:focus{border-bottom-color:#fff;background:#111}
+.field-input::placeholder{color:#333}
+.avatar-grid{display:flex;gap:6px;flex-wrap:wrap}
+.av-btn{background:#111;border:1px solid #1e1e1e;color:#888;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 9px;cursor:pointer}
+.av-btn.active{background:#fff;color:#000;border-color:#fff}
+.btn-primary{background:#fff;border:1px solid #fff;color:#000;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:3px;padding:12px;cursor:pointer;width:100%}
+.btn-ghost{background:none;border:none;color:#555;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 0;cursor:pointer;text-align:left}
+.auth-error{font-size:11px;color:#ccc;border-left:2px solid #fff;padding:6px 10px;background:#111;display:none}
+.auth-footer{margin-top:28px;font-size:9px;letter-spacing:1.5px;color:#333;border-top:1px solid #1e1e1e;padding-top:14px}
+#screen-chat{flex-direction:row;overflow:hidden}
+#sidebar{width:220px;min-width:220px;height:100%;background:#0d0d0d;border-right:1px solid #1e1e1e;display:flex;flex-direction:column}
+.sb-top{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #1e1e1e}
+.brand{font-size:13px;font-weight:600;letter-spacing:5px}
+.sb-user{display:flex;align-items:center;gap:9px;padding:12px 15px;border-bottom:1px solid #1e1e1e}
+.sb-av{font-size:10px;background:#1a1a1a;border:1px solid #1e1e1e;padding:4px 5px;color:#fff}
+.sb-name{font-size:12px;font-weight:600}
+.sb-email{font-size:10px;color:#555;word-break:break-all}
+.sb-section{padding:14px 0 6px;border-bottom:1px solid #1e1e1e}
+.sb-label{font-size:9px;letter-spacing:3px;color:#333;padding:0 15px 8px}
+.sb-list{list-style:none}
+.sb-item{display:flex;align-items:center;gap:6px;padding:7px 15px;cursor:pointer;color:#555;font-size:12px;position:relative}
+.sb-item.active{color:#fff;background:#1a1a1a}
+.sb-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#fff}
+.ch-hash{color:#333;font-size:11px}
+.sb-add{display:block;margin:8px 15px 2px;width:calc(100% - 30px);background:none;border:1px dashed #1e1e1e;color:#333;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 10px;cursor:pointer;text-align:left}
+.sb-footer{margin-top:auto;padding:10px 15px;border-top:1px solid #1e1e1e}
+.sb-stat{display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px}
+.icon-btn{background:none;border:none;color:#555;font-family:'IBM Plex Mono',monospace;font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#000}
+#topbar{height:44px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;padding:0 15px;gap:10px;background:#0d0d0d}
+.tb-left{display:flex;align-items:baseline;gap:6px;flex:1}
+.tb-hash{color:#333}
+#tb-name{font-size:13px;font-weight:600}
+.tb-sep{color:#333;font-size:11px}
+.tb-desc{font-size:11px;color:#555}
+#messages{flex:1;overflow-y:auto;padding:18px 0 6px;display:flex;flex-direction:column}
+.day-sep{display:flex;align-items:center;gap:12px;padding:10px 20px;font-size:9px;letter-spacing:2px;color:#333}
+.day-sep::before,.day-sep::after{content:'';flex:1;height:1px;background:#1a1a1a}
+.msg{display:flex;gap:11px;padding:5px 20px;position:relative}
+.msg:hover{background:#0d0d0d}
+.msg-av{font-size:10px;color:#333;flex-shrink:0;width:34px;padding-top:3px;text-align:center}
+.msg-body{flex:1;min-width:0}
+.msg-meta{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.msg-name{font-size:12px;font-weight:600;color:#fff}
+.msg-time{font-size:9px;color:#333}
+.msg-text{color:#ccc;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.msg.sys .msg-text{color:#333;font-style:italic;font-size:11px}
+#typing-row{display:flex;align-items:center;gap:8px;padding:3px 20px 3px 65px;font-size:10px;color:#333}
+.t-dots{display:flex;gap:3px}
+.t-dots span{width:3px;height:3px;background:#333;border-radius:50%;animation:td 1.1s infinite}
+.t-dots span:nth-child(2){animation-delay:.18s}
+.t-dots span:nth-child(3){animation-delay:.36s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-3px);opacity:1}}
+#composer{border-top:1px solid #1e1e1e;padding:11px 15px;background:#0d0d0d}
+#att-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.att-chip{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #1e1e1e;padding:4px 8px;font-size:11px;color:#888}
+.att-thumb{width:34px;height:34px;object-fit:cover}
+#composer-row{display:flex;align-items:flex-end;gap:8px;background:#111;border:1px solid #1e1e1e;padding:8px 10px}
+.c-prompt{font-size:11px;color:#333;white-space:nowrap;flex-shrink:0}
+#msg-inp{flex:1;background:none;border:none;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;resize:none;max-height:120px;overflow-y:auto;line-height:1.65}
+#msg-inp::placeholder{color:#333}
+.c-tools{display:flex;align-items:flex-end;gap:4px}
+.tool-btn{background:none;border:1px solid #1e1e1e;color:#555;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 8px;cursor:pointer}
+.send-btn{background:#fff;border:1px solid #fff;color:#000;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.c-hint{margin-top:6px;font-size:9px;color:#333}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;background:rgba(0,0,0,.8)}
+.overlay-box{background:#0d0d0d;border:1px solid #2a2a2a;padding:22px;width:320px;max-width:calc(100vw - 32px)}
+.ov-title{font-size:9px;letter-spacing:3px;color:#333;margin-bottom:16px}
+.cmd-table{border-collapse:collapse;width:100%;margin-bottom:18px}
+.cmd-table tr+tr td{padding-top:8px}
+.ck{font-size:12px;color:#fff;padding-right:18px;white-space:nowrap}
+.cv{font-size:11px;color:#555}
+#lightbox{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center}
+#lb-bg{position:absolute;inset:0;background:rgba(0,0,0,.92)}
+#lb-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px}
+#lb-img{max-width:90vw;max-height:85vh;display:block}
+#lb-close{position:absolute;top:-14px;right:-14px;background:#1a1a1a;border:1px solid #1e1e1e;color:#555;font-family:'IBM Plex Mono',monospace;font-size:12px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#toast{position:fixed;bottom:18px;right:18px;background:#fff;color:#000;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:9px 14px;z-index:700;display:none}
+.hidden{display:none!important}
+.mobile-only{display:none}
+@media(max-width:680px){
+.mobile-only{display:flex}
+#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:300;transform:translateX(-100%);transition:transform .25s}
+#sidebar.open{transform:translateX(0)}
+.auth-wrap{width:calc(100vw - 32px)}
 }
 </style>
-
 </head>
 <body>
 
-<!-- ═══════════════════════════
-     AUTH SCREEN
-═══════════════════════════ -->
-
 <div id="screen-auth" class="screen active">
   <div class="auth-wrap">
-    <header class="auth-header">
-      <div class="logo">TERM</div>
-      <div class="logo-sub">// INTERNAL MESSENGER</div>
-    </header>
+    <div class="logo">TERM</div>
+    <div class="logo-sub">// INTERNAL MESSENGER</div>
 
 ```
-<!-- LOGIN -->
 <div class="auth-panel active" id="panel-login">
-  <div class="panel-label">INICIAR SESIÓN</div>
+  <div class="panel-label">INICIAR SESION</div>
   <div class="field-group">
     <label class="field-label">EMAIL</label>
-    <input id="login-email" type="email" class="field-input" placeholder="tu@email.com" autocomplete="email" />
+    <input id="login-email" type="email" class="field-input" placeholder="tu@email.com"/>
   </div>
   <div class="field-group">
-    <label class="field-label">CONTRASEÑA</label>
-    <input id="login-pass" type="password" class="field-input" placeholder="••••••••" />
+    <label class="field-label">CONTRASENA</label>
+    <input id="login-pass" type="password" class="field-input" placeholder="min. 6 caracteres"/>
   </div>
-  <div class="auth-actions">
-    <button class="btn-primary" id="btn-login" onclick="doLogin()">CONECTAR</button>
-    <button class="btn-ghost" id="goto-register" onclick="document.getElementById('panel-login').classList.remove('active');document.getElementById('panel-register').classList.add('active');document.getElementById('reg-name').focus();">Sin cuenta → Registrarse</button>
-  </div>
-  <div class="auth-error hidden" id="login-error"></div>
+  <button class="btn-primary" onclick="doLogin()">CONECTAR</button>
+  <button class="btn-ghost" onclick="showPanel('register')">Sin cuenta - Registrarse</button>
+  <div class="auth-error" id="login-error"></div>
 </div>
 
-<!-- REGISTER -->
 <div class="auth-panel" id="panel-register">
   <div class="panel-label">CREAR CUENTA</div>
   <div class="field-group">
     <label class="field-label">NOMBRE</label>
-    <input id="reg-name" type="text" class="field-input" placeholder="Tu Nombre" maxlength="32" />
+    <input id="reg-name" type="text" class="field-input" placeholder="Tu Nombre" maxlength="32"/>
   </div>
   <div class="field-group">
     <label class="field-label">EMAIL</label>
-    <input id="reg-email" type="email" class="field-input" placeholder="tu@email.com" />
+    <input id="reg-email" type="email" class="field-input" placeholder="tu@email.com"/>
   </div>
   <div class="field-group">
-    <label class="field-label">CONTRASEÑA</label>
-    <input id="reg-pass" type="password" class="field-input" placeholder="mín. 6 caracteres" />
+    <label class="field-label">CONTRASENA</label>
+    <input id="reg-pass" type="password" class="field-input" placeholder="min. 6 caracteres"/>
   </div>
   <div class="field-group">
     <label class="field-label">AVATAR</label>
     <div class="avatar-grid" id="avatar-grid">
-      <button class="av-btn active" data-av="[ ]">[ ]</button>
-      <button class="av-btn" data-av="[+]">[+]</button>
-      <button class="av-btn" data-av="[~]">[~]</button>
-      <button class="av-btn" data-av="[#]">[#]</button>
-      <button class="av-btn" data-av="[$]">[$]</button>
-      <button class="av-btn" data-av="[*]">[*]</button>
-      <button class="av-btn" data-av="[!]">[!]</button>
-      <button class="av-btn" data-av="[?]">[?]</button>
+      <button class="av-btn active" onclick="selectAvatar(this,'[ ]')">[ ]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[+]')">[+]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[~]')">[~]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[#]')">[#]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[$]')">[$]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[*]')">[*]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[!]')">[!]</button>
+      <button class="av-btn" onclick="selectAvatar(this,'[?]')">[?]</button>
     </div>
   </div>
-  <div class="auth-actions">
-    <button class="btn-primary" id="btn-register" onclick="doRegister()">CREAR</button>
-    <button class="btn-ghost" id="goto-login" onclick="document.getElementById('panel-register').classList.remove('active');document.getElementById('panel-login').classList.add('active');document.getElementById('login-email').focus();">Ya tengo cuenta → Entrar</button>
-  </div>
-  <div class="auth-error hidden" id="reg-error"></div>
+  <button class="btn-primary" onclick="doRegister()">CREAR</button>
+  <button class="btn-ghost" onclick="showPanel('login')">Ya tengo cuenta - Entrar</button>
+  <div class="auth-error" id="reg-error"></div>
 </div>
 
-<div class="auth-loader hidden" id="auth-loader">
-  <span class="blink-cursor">█</span> conectando...
-</div>
-
-<footer class="auth-footer">
-  <span class="blink-cursor">█</span> CIFRADO · TIEMPO REAL · USO INTERNO
-</footer>
+<div class="auth-footer">CIFRADO - TIEMPO REAL - USO INTERNO</div>
 ```
 
   </div>
 </div>
 
-<!-- ═══════════════════════════
-     CHAT SCREEN
-═══════════════════════════ -->
-
 <div id="screen-chat" class="screen">
-
-  <!-- SIDEBAR -->
-
   <nav id="sidebar">
     <div class="sb-top">
       <div class="brand">TERM</div>
-      <button class="icon-btn" id="btn-logout" title="Salir">⏻</button>
+      <button class="icon-btn" onclick="doLogout()">off</button>
     </div>
-
-```
-<div class="sb-user" id="sb-user">
-  <div class="sb-av" id="sb-av">[ ]</div>
-  <div class="sb-info">
-    <div class="sb-name" id="sb-name">—</div>
-    <div class="sb-email" id="sb-email">—</div>
-  </div>
-  <div class="online-dot"></div>
-</div>
-
-<div class="sb-section">
-  <div class="sb-label">CANALES</div>
-  <ul class="sb-list" id="channel-list">
-    <li class="sb-item active" data-ch="general">
-      <span class="ch-hash">#</span><span>general</span>
-      <span class="ch-badge hidden">0</span>
-    </li>
-    <li class="sb-item" data-ch="archivos">
-      <span class="ch-hash">#</span><span>archivos</span>
-      <span class="ch-badge hidden">0</span>
-    </li>
-    <li class="sb-item" data-ch="ops">
-      <span class="ch-hash">#</span><span>ops</span>
-      <span class="ch-badge hidden">0</span>
-    </li>
-  </ul>
-  <button class="sb-add" id="btn-add-ch">+ canal</button>
-</div>
-
-<div class="sb-section">
-  <div class="sb-label">EN LÍNEA</div>
-  <ul class="sb-list" id="online-list"></ul>
-</div>
-
-<div class="sb-footer">
-  <div class="sb-stat"><span class="sk">ESTADO</span><span class="sv" id="stat-conn">—</span></div>
-  <div class="sb-stat"><span class="sk">CANAL</span><span class="sv" id="stat-ch">general</span></div>
-</div>
-```
-
+    <div class="sb-user">
+      <div class="sb-av" id="sb-av">[ ]</div>
+      <div>
+        <div class="sb-name" id="sb-name">-</div>
+        <div class="sb-email" id="sb-email">-</div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">CANALES</div>
+      <ul class="sb-list" id="channel-list">
+        <li class="sb-item active" data-ch="general" onclick="switchChannel('general')"><span class="ch-hash">#</span>general</li>
+        <li class="sb-item" data-ch="archivos" onclick="switchChannel('archivos')"><span class="ch-hash">#</span>archivos</li>
+        <li class="sb-item" data-ch="ops" onclick="switchChannel('ops')"><span class="ch-hash">#</span>ops</li>
+      </ul>
+      <button class="sb-add" onclick="addChannelPrompt()">+ canal</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">EN LINEA</div>
+      <ul class="sb-list" id="online-list"></ul>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-stat"><span style="color:#333">ESTADO</span><span id="stat-conn" style="color:#888">-</span></div>
+      <div class="sb-stat"><span style="color:#333">CANAL</span><span id="stat-ch" style="color:#888">general</span></div>
+    </div>
   </nav>
-
-  <!-- MAIN -->
 
   <main id="main">
     <div id="topbar">
-      <button class="icon-btn mobile-only" id="btn-menu">≡</button>
+      <button class="icon-btn mobile-only" onclick="document.getElementById('sidebar').classList.toggle('open')">=</button>
       <div class="tb-left">
         <span class="tb-hash">#</span>
         <span id="tb-name">general</span>
-        <span class="tb-sep">—</span>
+        <span class="tb-sep">-</span>
         <span class="tb-desc" id="tb-desc">chat general</span>
       </div>
-      <div class="tb-right">
-        <button class="icon-btn" id="btn-search">⌕</button>
-        <button class="icon-btn" id="btn-help">/</button>
+      <div style="display:flex;gap:2px">
+        <button class="icon-btn" onclick="toggleSearch()">buscar</button>
+        <button class="icon-btn" onclick="document.getElementById('overlay-cmds').classList.remove('hidden')">/</button>
       </div>
     </div>
 
 ```
-<!-- SEARCH -->
-<div id="searchbar" class="hidden">
-  <span class="s-prompt">buscar ›</span>
-  <input id="search-inp" type="text" placeholder="filtrar mensajes..." />
-  <button class="icon-btn" id="btn-s-close">✕</button>
+<div id="searchbar" class="hidden" style="display:flex;align-items:center;gap:10px;padding:7px 15px;border-bottom:1px solid #1e1e1e;background:#111">
+  <span style="font-size:11px;color:#333">buscar</span>
+  <input id="search-inp" type="text" placeholder="filtrar..." style="flex:1;background:none;border:none;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none" oninput="filterMessages()"/>
+  <button class="icon-btn" onclick="closeSearch()">x</button>
 </div>
 
-<!-- MESSAGES -->
 <div id="messages" role="log"></div>
 
-<!-- TYPING -->
 <div id="typing-row" class="hidden">
   <div class="t-dots"><span></span><span></span><span></span></div>
   <span id="typing-who">escribiendo...</span>
 </div>
 
-<!-- COMPOSER -->
 <div id="composer">
   <div id="att-preview" class="hidden"></div>
   <div id="composer-row">
-    <div class="c-prompt" id="c-prompt">› </div>
-    <textarea id="msg-inp" rows="1" placeholder="escribe un mensaje..."></textarea>
+    <div class="c-prompt" id="c-prompt">&gt; </div>
+    <textarea id="msg-inp" rows="1" placeholder="escribe un mensaje..." oninput="resizeInput()" onkeydown="handleKey(event)"></textarea>
     <div class="c-tools">
-      <button class="tool-btn" id="btn-img">img</button>
-      <button class="tool-btn" id="btn-file">archivo</button>
-      <button class="send-btn" id="btn-send">↵</button>
+      <button class="tool-btn" onclick="document.getElementById('inp-img').click()">img</button>
+      <button class="tool-btn" onclick="document.getElementById('inp-file').click()">archivo</button>
+      <button class="send-btn" onclick="sendMessage()">send</button>
     </div>
   </div>
-  <div class="c-hint"><kbd>Enter</kbd> enviar · <kbd>Shift+Enter</kbd> nueva línea · <kbd>/help</kbd> comandos</div>
+  <div class="c-hint">Enter enviar - Shift+Enter nueva linea</div>
 </div>
-
-<input type="file" id="inp-img" accept="image/*" hidden />
-<input type="file" id="inp-file" hidden />
+<input type="file" id="inp-img" accept="image/*" style="display:none" onchange="handleImageFile(this)"/>
+<input type="file" id="inp-file" style="display:none" onchange="handleAnyFile(this)"/>
 ```
 
   </main>
-
-  <!-- COMMANDS -->
 
   <div id="overlay-cmds" class="overlay hidden">
     <div class="overlay-box">
       <div class="ov-title">// COMANDOS</div>
       <table class="cmd-table">
-        <tr><td class="ck">/help</td><td class="cv">mostrar comandos</td></tr>
-        <tr><td class="ck">/nick &lt;n&gt;</td><td class="cv">cambiar nombre</td></tr>
-        <tr><td class="ck">/me &lt;texto&gt;</td><td class="cv">mensaje de acción</td></tr>
-        <tr><td class="ck">/clear</td><td class="cv">limpiar vista local</td></tr>
-        <tr><td class="ck">/shrug</td><td class="cv">¯\_(ツ)_/¯</td></tr>
-        <tr><td class="ck">/flip</td><td class="cv">(╯°□°）╯︵ ┻━┻</td></tr>
-        <tr><td class="ck">/whoami</td><td class="cv">info de sesión</td></tr>
+        <tr><td class="ck">/help</td><td class="cv">comandos</td></tr>
+        <tr><td class="ck">/nick n</td><td class="cv">cambiar nombre</td></tr>
+        <tr><td class="ck">/me texto</td><td class="cv">accion</td></tr>
+        <tr><td class="ck">/clear</td><td class="cv">limpiar vista</td></tr>
+        <tr><td class="ck">/shrug</td><td class="cv">shrug</td></tr>
       </table>
-      <button class="btn-ghost" id="btn-close-cmds">[ cerrar ]</button>
+      <button class="btn-ghost" onclick="document.getElementById('overlay-cmds').classList.add('hidden')">[ cerrar ]</button>
     </div>
   </div>
 
-  <!-- LIGHTBOX -->
-
   <div id="lightbox" class="hidden">
-    <div id="lb-bg"></div>
+    <div id="lb-bg" onclick="closeLightbox()"></div>
     <div id="lb-inner">
-      <button id="lb-close">✕</button>
-      <img id="lb-img" src="" alt="" />
-      <div id="lb-meta"></div>
+      <button id="lb-close" onclick="closeLightbox()">x</button>
+      <img id="lb-img" src="" alt=""/>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
+<div id="toast"></div>
 
-<div id="toast" class="hidden"></div>
+<!-- Firebase compat (NO module) -->
 
-<!-- ═══════════════════════════
-     FIREBASE (CDN — sin npm)
-═══════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 
-<script type="module">
-window._firebaseReady = false;
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword,
-           signInWithEmailAndPassword, signOut,
-           onAuthStateChanged, updateProfile }      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, addDoc,
-           query, orderBy, onSnapshot, serverTimestamp,
-           doc, setDoc, getDoc, getDocs,
-           where, limit }                           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  // ── CONFIG ──────────────────────────────
-  const firebaseConfig = {
-    apiKey:            "AIzaSyCsnaUlAym1xBy0QnlBehRvm1o8cthOVoI",
-    authDomain:        "terminalmessenger-6040b.firebaseapp.com",
-    projectId:         "terminalmessenger-6040b",
-    storageBucket:     "terminalmessenger-6040b.firebasestorage.app",
-    messagingSenderId: "932577335300",
-    appId:             "1:932577335300:web:cb0e53f8ee72f323e4bd51",
-  };
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-  // Storage no requerido — archivos se guardan como base64 en Firestore
-
-  // ── STATE ────────────────────────────────
-  let currentUser   = null;
-  let currentAvatar = '[ ]';
-  let activeChannel = 'general';
-  let unsubMessages = null;
-  let unsubOnline   = null;
-  let pendingFiles  = [];
-  let typingTimer   = null;
-  let sessionStart  = Date.now();
-
-  const CHANNELS = {
-    general:  'chat general · todos',
-    archivos: 'compartir archivos · transferencias',
-    ops:      'operaciones · uso interno',
-  };
-
-  // ── UTILS ────────────────────────────────
-  const $  = id => document.getElementById(id);
-  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  const fmt = text => {
-    let s = esc(text);
-    s = s.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-
-```
-s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
-s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-return s;
-```
-
-};
-
-const ftime = ts => {
-if (!ts) return ‘’;
-const d = ts.toDate ? ts.toDate() : new Date(ts);
-return d.toLocaleTimeString([], { hour: ‘2-digit’, minute: ‘2-digit’ });
-};
-
-const fdate = ts => {
-if (!ts) return ‘’;
-const d = ts.toDate ? ts.toDate() : new Date(ts);
-const t = new Date();
-const y = new Date(t); y.setDate(y.getDate() - 1);
-if (d.toDateString() === t.toDateString()) return ‘HOY’;
-if (d.toDateString() === y.toDateString()) return ‘AYER’;
-return d.toLocaleDateString(‘es’, { weekday: ‘short’, month: ‘short’, day: ‘numeric’ }).toUpperCase();
-};
-
-const fsize = b => {
-if (b < 1024) return b + ’ B’;
-if (b < 1048576) return (b/1024).toFixed(1) + ’ KB’;
-return (b/1048576).toFixed(2) + ’ MB’;
-};
-
-const fileTag = name => {
-const ext = (name.split(’.’).pop() || ‘’).toLowerCase();
-const m = { pdf:‘PDF’,doc:‘DOC’,docx:‘DOC’,txt:‘TXT’,md:‘MD’,
-xls:‘XLS’,xlsx:‘XLS’,csv:‘CSV’,zip:‘ZIP’,rar:‘ZIP’,
-mp3:‘MP3’,wav:‘WAV’,mp4:‘MP4’,mov:‘MOV’,
-js:‘JS’,ts:‘TS’,py:‘PY’,html:‘HTM’,css:‘CSS’,json:‘JSON’ };
-return m[ext] || ‘FILE’;
-};
-
-let toastTimer;
-const toast = (msg, ms = 3000) => {
-const el = $(‘toast’);
-el.textContent = msg;
-el.classList.remove(‘hidden’);
-clearTimeout(toastTimer);
-toastTimer = setTimeout(() => el.classList.add(‘hidden’), ms);
-};
-
-// ── AUTH ─────────────────────────────────
-onAuthStateChanged(auth, async user => {
-if (user) {
-// Load avatar from Firestore
-const snap = await getDoc(doc(db, ‘users’, user.uid));
-const data = snap.exists() ? snap.data() : {};
-currentUser = { uid: user.uid, name: user.displayName || ‘Usuario’, email: user.email, avatar: data.avatar || ‘[ ]’ };
-bootChat();
-} else {
-currentUser = null;
-showAuth();
-}
+<script>
+// CONFIG
+firebase.initializeApp({
+  apiKey: "AIzaSyCsnaUlAym1xBy0QnlBehRvm1o8cthOVoI",
+  authDomain: "terminalmessenger-6040b.firebaseapp.com",
+  projectId: "terminalmessenger-6040b",
+  storageBucket: "terminalmessenger-6040b.firebasestorage.app",
+  messagingSenderId: "932577335300",
+  appId: "1:932577335300:web:cb0e53f8ee72f323e4bd51"
 });
 
-window.doRegister = async function doRegister() {
-const name  = $(‘reg-name’).value.trim();
-const email = $(‘reg-email’).value.trim();
-const pass  = $(‘reg-pass’).value;
-const errEl = $(‘reg-error’);
-errEl.classList.add(‘hidden’);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-```
-if (!name)         { showErr(errEl, 'Ingresa tu nombre'); return; }
-if (!email)        { showErr(errEl, 'Ingresa tu email'); return; }
-if (pass.length < 6) { showErr(errEl, 'Contraseña mínimo 6 caracteres'); return; }
+// STATE
+let currentUser = null;
+let currentAvatar = '[ ]';
+let activeChannel = 'general';
+let unsubMessages = null;
+let pendingFiles = [];
 
-setLoading(true);
-try {
-  const cred = await createUserWithEmailAndPassword(auth, email, pass);
-  await updateProfile(cred.user, { displayName: name });
-  await setDoc(doc(db, 'users', cred.user.uid), {
-    name, email, avatar: currentAvatar, createdAt: serverTimestamp()
-  });
-} catch (e) {
-  setLoading(false);
-  showErr(errEl, firebaseError(e.code));
-}
-```
+const CHANNELS = {
+  general: 'chat general',
+  archivos: 'archivos y transferencias',
+  ops: 'operaciones internas'
+};
 
-}
+// UTILS
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-window.doLogin = async function doLogin() {
-const email = $(‘login-email’).value.trim();
-const pass  = $(‘login-pass’).value;
-const errEl = $(‘login-error’);
-errEl.classList.add(‘hidden’);
-
-```
-if (!email || !pass) { showErr(errEl, 'Completa todos los campos'); return; }
-
-setLoading(true);
-try {
-  await signInWithEmailAndPassword(auth, email, pass);
-} catch (e) {
-  setLoading(false);
-  showErr(errEl, firebaseError(e.code));
-}
-```
-
+function ftime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
-async function doLogout() {
-await setUserOnline(false);
-await signOut(auth);
+function fsize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
 }
 
-const showErr = (el, msg) => { el.textContent = msg; el.classList.remove(‘hidden’); };
-const setLoading = on => { $(‘auth-loader’).classList.toggle(‘hidden’, !on); };
+function fileTag(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const m = {pdf:'PDF',doc:'DOC',docx:'DOC',txt:'TXT',xls:'XLS',xlsx:'XLS',
+    zip:'ZIP',mp3:'MP3',mp4:'MP4',js:'JS',py:'PY',html:'HTM',json:'JSON'};
+  return m[ext] || 'FILE';
+}
 
-const firebaseError = code => ({
-‘auth/email-already-in-use’: ‘Este email ya está registrado’,
-‘auth/invalid-email’:        ‘Email inválido’,
-‘auth/weak-password’:        ‘Contraseña muy débil’,
-‘auth/user-not-found’:       ‘Usuario no encontrado’,
-‘auth/wrong-password’:       ‘Contraseña incorrecta’,
-‘auth/invalid-credential’:   ‘Email o contraseña incorrectos’,
-‘auth/network-request-failed’: ‘Sin conexión a internet’,
-}[code] || ’Error: ’ + code);
+let toastT;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.style.display = 'none', 3000);
+}
 
-// ── PRESENCE (online users) ───────────────
-async function setUserOnline(online) {
-if (!currentUser) return;
-await setDoc(doc(db, ‘presence’, currentUser.uid), {
-name: currentUser.name,
-avatar: currentUser.avatar,
-online,
-lastSeen: serverTimestamp(),
-}, { merge: true });
+function showErr(id, msg) {
+  const el = $(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// AUTH UI
+function showPanel(name) {
+  $('panel-login').classList.toggle('active', name === 'login');
+  $('panel-register').classList.toggle('active', name === 'register');
+}
+
+function selectAvatar(btn, av) {
+  document.querySelectorAll('.av-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentAvatar = av;
+}
+
+// REGISTER
+function doRegister() {
+  const name = $('reg-name').value.trim();
+  const email = $('reg-email').value.trim();
+  const pass = $('reg-pass').value;
+  $('reg-error').style.display = 'none';
+
+  if (!name) { showErr('reg-error', 'Ingresa tu nombre'); return; }
+  if (!email) { showErr('reg-error', 'Ingresa tu email'); return; }
+  if (pass.length < 6) { showErr('reg-error', 'Contrasena minimo 6 caracteres'); return; }
+
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then(cred => {
+      return cred.user.updateProfile({displayName: name}).then(() => {
+        return db.collection('users').doc(cred.user.uid).set({
+          name, email, avatar: currentAvatar,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    })
+    .catch(e => showErr('reg-error', firebaseErr(e.code)));
+}
+
+// LOGIN
+function doLogin() {
+  const email = $('login-email').value.trim();
+  const pass = $('login-pass').value;
+  $('login-error').style.display = 'none';
+
+  if (!email || !pass) { showErr('login-error', 'Completa todos los campos'); return; }
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(e => showErr('login-error', firebaseErr(e.code)));
+}
+
+// LOGOUT
+function doLogout() {
+  if (!confirm('Salir?')) return;
+  setOnline(false);
+  auth.signOut();
+}
+
+function firebaseErr(code) {
+  const m = {
+    'auth/email-already-in-use': 'Email ya registrado',
+    'auth/invalid-email': 'Email invalido',
+    'auth/weak-password': 'Contrasena muy debil',
+    'auth/user-not-found': 'Usuario no encontrado',
+    'auth/wrong-password': 'Contrasena incorrecta',
+    'auth/invalid-credential': 'Email o contrasena incorrectos',
+    'auth/network-request-failed': 'Sin conexion'
+  };
+  return m[code] || 'Error: ' + code;
+}
+
+// AUTH STATE
+auth.onAuthStateChanged(user => {
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(snap => {
+      const data = snap.exists ? snap.data() : {};
+      currentUser = {
+        uid: user.uid,
+        name: user.displayName || 'Usuario',
+        email: user.email,
+        avatar: data.avatar || '[ ]'
+      };
+      bootChat();
+    });
+  } else {
+    currentUser = null;
+    $('screen-auth').classList.add('active');
+    $('screen-chat').classList.remove('active');
+  }
+});
+
+// PRESENCE
+function setOnline(online) {
+  if (!currentUser) return;
+  db.collection('presence').doc(currentUser.uid).set({
+    name: currentUser.name,
+    avatar: currentUser.avatar,
+    online,
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge: true});
 }
 
 function listenOnline() {
-if (unsubOnline) unsubOnline();
-const q = query(collection(db, ‘presence’), where(‘online’, ‘==’, true));
-unsubOnline = onSnapshot(q, snap => {
-const list = $(‘online-list’);
-list.innerHTML = ‘’;
-snap.forEach(d => {
-const u = d.data();
-const li = document.createElement(‘li’);
-li.className = ‘sb-item ol-item’;
-li.innerHTML = `<span class="ch-hash">${esc(u.avatar||'[ ]')}</span><span>${esc(u.name)}</span>`;
-list.appendChild(li);
-});
-});
+  db.collection('presence').where('online','==',true).onSnapshot(snap => {
+    const list = $('online-list');
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const u = d.data();
+      const li = document.createElement('li');
+      li.className = 'sb-item';
+      li.style.cursor = 'default';
+      li.innerHTML = '<span class="ch-hash">' + esc(u.avatar||'[ ]') + '</span>' + esc(u.name);
+      list.appendChild(li);
+    });
+  });
 }
 
-// ── BOOT CHAT ────────────────────────────
-async function bootChat() {
-$(‘screen-auth’).classList.remove(‘active’);
-$(‘screen-chat’).classList.add(‘active’);
-setLoading(false);
-
-```
-$('sb-av').textContent    = currentUser.avatar;
-$('sb-name').textContent  = currentUser.name;
-$('sb-email').textContent = currentUser.email;
-$('stat-conn').textContent = 'EN LÍNEA';
-
-await setUserOnline(true);
-listenOnline();
-switchChannel('general');
-
-// Keepalive
-setInterval(() => setUserOnline(true), 60000);
-
-// Window unload
-window.addEventListener('beforeunload', () => setUserOnline(false));
-```
-
+// BOOT
+function bootChat() {
+  $('screen-auth').classList.remove('active');
+  $('screen-chat').classList.add('active');
+  $('sb-av').textContent = currentUser.avatar;
+  $('sb-name').textContent = currentUser.name;
+  $('sb-email').textContent = currentUser.email;
+  $('stat-conn').textContent = 'EN LINEA';
+  $('c-prompt').textContent = '@' + currentUser.name.split(' ')[0].toLowerCase() + ' > ';
+  setOnline(true);
+  listenOnline();
+  switchChannel('general');
+  setInterval(() => setOnline(true), 60000);
+  window.addEventListener('beforeunload', () => setOnline(false));
 }
 
-function showAuth() {
-$(‘screen-chat’).classList.remove(‘active’);
-$(‘screen-auth’).classList.add(‘active’);
-$(‘login-email’).focus();
-}
-
-// ── CHANNELS ─────────────────────────────
+// CHANNELS
 function switchChannel(ch) {
-activeChannel = ch;
-
-```
-document.querySelectorAll('.sb-item[data-ch]').forEach(el => {
-  el.classList.toggle('active', el.dataset.ch === ch);
-  if (el.dataset.ch === ch) el.querySelector('.ch-badge')?.classList.add('hidden');
-});
-
-$('tb-name').textContent  = ch;
-$('tb-desc').textContent  = CHANNELS[ch] || 'canal personalizado';
-$('stat-ch').textContent  = ch;
-$('c-prompt').textContent = `@${currentUser.name.split(' ')[0].toLowerCase()} › `;
-
-$('messages').innerHTML = '';
-listenMessages(ch);
-$('sidebar').classList.remove('open');
-```
-
+  activeChannel = ch;
+  document.querySelectorAll('.sb-item[data-ch]').forEach(el => {
+    el.classList.toggle('active', el.dataset.ch === ch);
+  });
+  $('tb-name').textContent = ch;
+  $('tb-desc').textContent = CHANNELS[ch] || 'canal personalizado';
+  $('stat-ch').textContent = ch;
+  $('messages').innerHTML = '';
+  listenMessages(ch);
+  $('sidebar').classList.remove('open');
 }
 
-function addChannel(name) {
-const clean = name.toLowerCase().replace(/[^a-z0-9-_]/g,’’).slice(0,20);
-if (!clean || clean.length < 2) { toast(‘Nombre de canal inválido’); return; }
-
-```
-CHANNELS[clean] = `canal personalizado · #${clean}`;
-
-const li = document.createElement('li');
-li.className = 'sb-item';
-li.dataset.ch = clean;
-li.innerHTML = `<span class="ch-hash">#</span><span>${clean}</span><span class="ch-badge hidden">0</span>`;
-li.addEventListener('click', () => switchChannel(clean));
-$('channel-list').appendChild(li);
-switchChannel(clean);
-```
-
+function addChannelPrompt() {
+  const name = prompt('Nombre del canal:');
+  if (!name) return;
+  const clean = name.toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,20);
+  if (clean.length < 2) { toast('Nombre invalido'); return; }
+  CHANNELS[clean] = 'canal personalizado';
+  const li = document.createElement('li');
+  li.className = 'sb-item';
+  li.dataset.ch = clean;
+  li.setAttribute('onclick', "switchChannel('" + clean + "')");
+  li.innerHTML = '<span class="ch-hash">#</span>' + clean;
+  $('channel-list').appendChild(li);
+  switchChannel(clean);
 }
 
-// ── MESSAGES (REAL-TIME) ──────────────────
-function listenMessages(channel) {
-if (unsubMessages) unsubMessages();
-
-```
-const q = query(
-  collection(db, 'channels', channel, 'messages'),
-  orderBy('ts', 'asc'),
-  limit(200)
-);
-
+// MESSAGES
 let lastDate = null;
 let initialized = false;
 
-unsubMessages = onSnapshot(q, snap => {
-  snap.docChanges().forEach(change => {
-    if (change.type === 'added') {
-      const msg = { id: change.doc.id, ...change.doc.data() };
+function listenMessages(channel) {
+  if (unsubMessages) unsubMessages();
+  lastDate = null;
+  initialized = false;
 
-      // Day separator
-      const d = fdate(msg.ts);
-      if (d !== lastDate) {
-        const sep = document.createElement('div');
-        sep.className = 'day-sep';
-        sep.textContent = d;
-        $('messages').appendChild(sep);
-        lastDate = d;
+  const q = db.collection('channels').doc(channel).collection('messages')
+    .orderBy('ts','asc').limitToLast(200);
+
+  unsubMessages = q.onSnapshot(snap => {
+    snap.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const msg = {id: change.doc.id, ...change.doc.data()};
+        appendMsg(msg, initialized);
       }
-
-      appendMsg(msg, initialized);
+    });
+    if (!initialized) {
+      initialized = true;
+      scrollBottom();
     }
   });
+}
 
-  if (!initialized) {
-    initialized = true;
-    scrollBottom();
+function appendMsg(msg, animate) {
+  const list = $('messages');
+
+  // Day separator
+  const ts = msg.ts ? (msg.ts.toDate ? msg.ts.toDate() : new Date(msg.ts)) : new Date();
+  const dateStr = ts.toLocaleDateString('es', {weekday:'short', month:'short', day:'numeric'}).toUpperCase();
+  if (dateStr !== lastDate) {
+    const sep = document.createElement('div');
+    sep.className = 'day-sep';
+    sep.textContent = dateStr;
+    list.appendChild(sep);
+    lastDate = dateStr;
   }
-});
-```
 
-}
+  const div = document.createElement('div');
+  const isOwn = msg.authorId === currentUser.uid;
 
-function appendMsg(msg, animate = true) {
-const el = buildMsgEl(msg);
-if (animate) el.style.animation = ‘msg-in 0.18s cubic-bezier(0.16,1,0.3,1) both’;
-$(‘messages’).appendChild(el);
-if (animate) scrollBottom();
-}
+  if (msg.type === 'sys') {
+    div.className = 'msg sys';
+    div.innerHTML = '<div class="msg-av">-</div><div class="msg-body"><div class="msg-text">' + esc(msg.content) + '</div></div>';
+    list.appendChild(div);
+    if (animate) scrollBottom();
+    return;
+  }
 
-function buildMsgEl(msg) {
-const div = document.createElement(‘div’);
-const isOwn = msg.authorId === currentUser.uid;
+  div.className = 'msg' + (isOwn ? ' own' : '');
+  div.dataset.id = msg.id;
 
-```
-if (msg.type === 'sys') {
-  div.className = 'msg sys';
-  div.innerHTML = `<div class="msg-av">·</div><div class="msg-body"><div class="msg-text">${esc(msg.content)}</div></div>`;
-  return div;
-}
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = msg.authorAvatar || '[ ]';
 
-div.className = `msg${isOwn ? ' own' : ''}${msg.type === 'action' ? ' action' : ''}`;
-div.dataset.id = msg.id;
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+  body.innerHTML = '<div class="msg-meta"><span class="msg-name">' + esc(msg.authorName||'?') + '</span><span class="msg-time">' + ftime(msg.ts) + '</span></div>';
 
-const av = document.createElement('div');
-av.className = 'msg-av';
-av.textContent = msg.authorAvatar || '[ ]';
+  const txt = document.createElement('div');
+  txt.className = 'msg-text';
+  if (msg.content) txt.textContent = msg.content;
 
-const body = document.createElement('div');
-body.className = 'msg-body';
+  if (msg.imageUrl) {
+    const img = document.createElement('img');
+    img.src = msg.imageUrl;
+    img.style.cssText = 'display:block;max-width:260px;max-height:200px;margin-top:8px;cursor:pointer;border:1px solid #1e1e1e';
+    img.onclick = () => { $('lb-img').src = msg.imageUrl; $('lightbox').classList.remove('hidden'); };
+    txt.appendChild(img);
+  }
 
-const meta = document.createElement('div');
-meta.className = 'msg-meta';
-meta.innerHTML = `<span class="msg-name">${esc(msg.authorName || 'Usuario')}</span><span class="msg-time">${ftime(msg.ts)}</span>`;
+  if (msg.fileData) {
+    const f = document.createElement('div');
+    f.style.cssText = 'display:inline-flex;align-items:center;gap:10px;margin-top:8px;padding:10px 14px;background:#111;border:1px solid #1e1e1e;cursor:pointer';
+    f.innerHTML = '<span style="color:#555;font-size:10px">' + fileTag(msg.fileName||'') + '</span><span><span style="display:block;font-size:12px;color:#fff">' + esc(msg.fileName||'archivo') + '</span><span style="display:block;font-size:10px;color:#555">' + (msg.fileSize||'') + '</span></span>';
+    f.onclick = () => { const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName||'archivo'; a.click(); };
+    txt.appendChild(f);
+  }
 
-const txt = document.createElement('div');
-txt.className = 'msg-text';
-if (msg.content) txt.innerHTML = fmt(msg.content);
-
-// Image attachment
-if (msg.imageUrl) {
-  const img = document.createElement('img');
-  img.className = 'msg-img';
-  img.src = msg.imageUrl;
-  img.alt = msg.imageName || 'imagen';
-  img.loading = 'lazy';
-  img.addEventListener('click', () => openLightbox(msg.imageUrl, msg.imageName || 'imagen'));
-  txt.appendChild(img);
-}
-
-// File attachment (base64)
-if (msg.fileData) {
-  const file = document.createElement('div');
-  file.className = 'msg-file';
-  file.innerHTML = `
-    <span class="mf-tag">${fileTag(msg.fileName || '')}</span>
-    <span class="mf-info">
-      <span class="mf-name">${esc(msg.fileName || 'archivo')}</span>
-      <span class="mf-size">${msg.fileSize || ''}</span>
-    </span>
-    <span class="mf-dl">↓</span>
-  `;
-  file.addEventListener('click', () => {
-    const a = document.createElement('a');
-    a.href = msg.fileData;
-    a.download = msg.fileName || 'archivo';
-    a.click();
-  });
-  txt.appendChild(file);
-}
-
-// Reaction / copy tools
-const tools = document.createElement('div');
-tools.className = 'msg-tools';
-tools.innerHTML = `<button class="msg-tool" data-a="copy">copiar</button>`;
-tools.querySelector('[data-a="copy"]').addEventListener('click', () => {
-  navigator.clipboard.writeText(msg.content || '').then(() => toast('Copiado'));
-});
-
-body.appendChild(meta);
-body.appendChild(txt);
-div.appendChild(av);
-div.appendChild(body);
-div.appendChild(tools);
-return div;
-```
-
+  body.appendChild(txt);
+  div.appendChild(av);
+  div.appendChild(body);
+  list.appendChild(div);
+  if (animate) scrollBottom();
 }
 
 function scrollBottom() {
-const el = $(‘messages’);
-el.scrollTop = el.scrollHeight;
+  const el = $('messages');
+  el.scrollTop = el.scrollHeight;
 }
 
-// ── SEND ─────────────────────────────────
-async function send() {
-const input = $(‘msg-inp’);
-const text  = input.value.trim();
+// SEND
+function sendMessage() {
+  const input = $('msg-inp');
+  const text = input.value.trim();
+  if (!text && pendingFiles.length === 0) return;
 
-```
-if (!text && pendingFiles.length === 0) return;
+  if (text.startsWith('/')) {
+    input.value = '';
+    resizeInput();
+    handleCommand(text);
+    return;
+  }
 
-if (text.startsWith('/')) {
+  const base = {
+    authorId: currentUser.uid,
+    authorName: currentUser.name,
+    authorAvatar: currentUser.avatar,
+    ts: firebase.firestore.FieldValue.serverTimestamp(),
+    type: 'text',
+    content: text
+  };
+
   input.value = '';
   resizeInput();
-  handleCommand(text);
-  return;
-}
 
-const base = {
-  authorId:     currentUser.uid,
-  authorName:   currentUser.name,
-  authorAvatar: currentUser.avatar,
-  ts:           serverTimestamp(),
-  type:         'text',
-  content:      text,
-};
-
-input.value = '';
-resizeInput();
-
-// Archivos como base64 directo en Firestore (sin Storage)
-if (pendingFiles.length > 0) {
-  for (const pf of pendingFiles) {
-    const msgData = { ...base, content: text };
-    try {
-      // Comprimir imagen si es muy grande
-      let data64 = pf.data;
-      if (pf.type === 'image' && pf.file.size > 200 * 1024) {
-        data64 = await compressImage(pf.file, 800, 0.7);
-      }
+  if (pendingFiles.length > 0) {
+    pendingFiles.forEach((pf, i) => {
+      const msgData = Object.assign({}, base, {content: i === 0 ? text : ''});
       if (pf.type === 'image') {
-        msgData.imageUrl  = data64;
-        msgData.imageName = pf.file.name;
+        compressImage(pf.file, 800, 0.7).then(data64 => {
+          msgData.imageUrl = data64;
+          msgData.imageName = pf.file.name;
+          db.collection('channels').doc(activeChannel).collection('messages').add(msgData);
+        });
       } else {
-        msgData.fileData  = data64;
-        msgData.fileName  = pf.file.name;
-        msgData.fileSize  = fsize(pf.file.size);
-        msgData.fileMime  = pf.file.type;
+        const reader = new FileReader();
+        reader.onload = e => {
+          msgData.fileData = e.target.result;
+          msgData.fileName = pf.file.name;
+          msgData.fileSize = fsize(pf.file.size);
+          db.collection('channels').doc(activeChannel).collection('messages').add(msgData);
+        };
+        reader.readAsDataURL(pf.file);
       }
-    } catch (e) {
-      toast('Error procesando archivo: ' + e.message);
-      continue;
-    }
-    await addDoc(collection(db, 'channels', activeChannel, 'messages'), msgData);
-    base.content = '';
-  }
-  clearPending();
-} else {
-  await addDoc(collection(db, 'channels', activeChannel, 'messages'), base);
-}
-```
-
-}
-
-// ── COMMANDS ─────────────────────────────
-function handleCommand(raw) {
-const parts = raw.slice(1).split(’ ‘);
-const cmd   = parts[0].toLowerCase();
-const args  = parts.slice(1).join(’ ’).trim();
-
-```
-const sysPost = content => addDoc(collection(db, 'channels', activeChannel, 'messages'), {
-  type: 'sys', content,
-  authorId: currentUser.uid,
-  ts: serverTimestamp(),
-});
-
-switch (cmd) {
-  case 'help':
-    $('overlay-cmds').classList.remove('hidden');
-    break;
-  case 'clear':
-    $('messages').innerHTML = '';
-    toast('Vista local limpiada (mensajes en servidor intactos)');
-    break;
-  case 'nick':
-    if (!args) { toast('Uso: /nick <nombre>'); return; }
-    currentUser.name = args.slice(0, 32);
-    updateProfile(auth.currentUser, { displayName: currentUser.name });
-    setDoc(doc(db, 'users', currentUser.uid), { name: currentUser.name }, { merge: true });
-    $('sb-name').textContent = currentUser.name;
-    toast(`Nombre cambiado a: ${currentUser.name}`);
-    break;
-  case 'me':
-    if (!args) return;
-    addDoc(collection(db, 'channels', activeChannel, 'messages'), {
-      type: 'action', content: `${currentUser.name} ${args}`,
-      authorId: currentUser.uid, authorName: currentUser.name,
-      authorAvatar: currentUser.avatar, ts: serverTimestamp(),
     });
-    break;
-  case 'shrug': sysPost('¯\\_(ツ)_/¯'); break;
-  case 'flip':  sysPost('(╯°□°）╯︵ ┻━┻'); break;
-  case 'whoami':
-    sysPost(`${currentUser.name} · ${currentUser.email} · sesión activa`);
-    break;
-  default:
-    toast(`Comando desconocido: /${cmd}`);
-}
-```
-
+    clearPending();
+  } else {
+    db.collection('channels').doc(activeChannel).collection('messages').add(base);
+  }
 }
 
-// ── IMAGE COMPRESSION ────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+// COMMANDS
+function handleCommand(raw) {
+  const parts = raw.slice(1).split(' ');
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1).join(' ').trim();
+
+  const sys = content => db.collection('channels').doc(activeChannel).collection('messages').add({
+    type:'sys', content, authorId: currentUser.uid,
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  switch(cmd) {
+    case 'help': $('overlay-cmds').classList.remove('hidden'); break;
+    case 'clear': $('messages').innerHTML = ''; toast('Vista limpiada'); break;
+    case 'nick':
+      if (!args) { toast('Uso: /nick nombre'); return; }
+      currentUser.name = args.slice(0,32);
+      auth.currentUser.updateProfile({displayName: currentUser.name});
+      db.collection('users').doc(currentUser.uid).set({name: currentUser.name},{merge:true});
+      $('sb-name').textContent = currentUser.name;
+      toast('Nombre: ' + currentUser.name);
+      break;
+    case 'me': if (args) sys(currentUser.name + ' ' + args); break;
+    case 'shrug': sys('shrug'); break;
+    default: toast('Comando desconocido: /' + cmd);
+  }
+}
+
+// FILES
 function compressImage(file, maxW, quality) {
-return new Promise((resolve, reject) => {
-const img = new Image();
-const url = URL.createObjectURL(file);
-img.onload = () => {
-URL.revokeObjectURL(url);
-const canvas = document.createElement(‘canvas’);
-let w = img.width, h = img.height;
-if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-canvas.width = w; canvas.height = h;
-canvas.getContext(‘2d’).drawImage(img, 0, 0, w, h);
-resolve(canvas.toDataURL(‘image/jpeg’, quality));
-};
-img.onerror = reject;
-img.src = url;
-});
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
 }
 
-// ── FILE HANDLING ─────────────────────────
-function queueFile(file, type) {
-if (type === ‘image’ && file.size > 5 * 1024 * 1024)  { toast(‘Imagen muy grande (máx 5 MB)’); return; }
-if (type === ‘file’  && file.size > 1 * 1024 * 1024)  { toast(‘Archivo máx 1 MB en plan gratuito’); return; }
-const reader = new FileReader();
-reader.onload = e => {
-pendingFiles.push({ file, type, data: e.target.result });
-renderPending();
-};
-reader.readAsDataURL(file);
+function handleImageFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { toast('Imagen max 5MB'); return; }
+  pendingFiles.push({file, type:'image'});
+  renderPending();
+  input.value = '';
+}
+
+function handleAnyFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 1*1024*1024) { toast('Archivo max 1MB'); return; }
+  if (file.type.startsWith('image/')) {
+    pendingFiles.push({file, type:'image'});
+  } else {
+    pendingFiles.push({file, type:'file'});
+  }
+  renderPending();
+  input.value = '';
 }
 
 function renderPending() {
-const area = $(‘att-preview’);
-area.innerHTML = ‘’;
-if (!pendingFiles.length) { area.classList.add(‘hidden’); return; }
-area.classList.remove(‘hidden’);
-
-```
-pendingFiles.forEach((pf, i) => {
-  const chip = document.createElement('div');
-  chip.className = 'att-chip';
-
-  if (pf.type === 'image') {
-    const img = document.createElement('img');
-    img.className = 'att-thumb';
-    img.src = URL.createObjectURL(pf.file);
-    chip.appendChild(img);
-  } else {
-    const tag = document.createElement('span');
-    tag.className = 'att-tag';
-    tag.textContent = fileTag(pf.file.name);
-    chip.appendChild(tag);
-  }
-
-  const name = document.createElement('span');
-  name.className = 'att-name';
-  name.textContent = pf.file.name.length > 20 ? pf.file.name.slice(0,17)+'...' : pf.file.name;
-  chip.appendChild(name);
-
-  const rm = document.createElement('button');
-  rm.className = 'att-rm';
-  rm.textContent = '✕';
-  rm.onclick = () => { pendingFiles.splice(i, 1); renderPending(); };
-  chip.appendChild(rm);
-
-  area.appendChild(chip);
-});
-```
-
+  const area = $('att-preview');
+  area.innerHTML = '';
+  if (!pendingFiles.length) { area.classList.add('hidden'); return; }
+  area.classList.remove('hidden');
+  pendingFiles.forEach((pf, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'att-chip';
+    if (pf.type === 'image') {
+      const img = document.createElement('img');
+      img.className = 'att-thumb';
+      img.src = URL.createObjectURL(pf.file);
+      chip.appendChild(img);
+    }
+    const name = document.createElement('span');
+    name.textContent = pf.file.name.slice(0,20);
+    chip.appendChild(name);
+    const rm = document.createElement('button');
+    rm.style.cssText = 'background:none;border:none;color:#555;cursor:pointer;font-size:11px';
+    rm.textContent = 'x';
+    rm.onclick = () => { pendingFiles.splice(i,1); renderPending(); };
+    chip.appendChild(rm);
+    area.appendChild(chip);
+  });
 }
 
 function clearPending() {
-pendingFiles = [];
-renderPending();
+  pendingFiles = [];
+  renderPending();
 }
 
-// ── LIGHTBOX ─────────────────────────────
-const openLightbox = (src, name) => {
-$(‘lb-img’).src = src;
-$(‘lb-meta’).textContent = name;
-$(‘lightbox’).classList.remove(‘hidden’);
-};
-const closeLightbox = () => {
-$(‘lightbox’).classList.add(‘hidden’);
-$(‘lb-img’).src = ‘’;
-};
+// LIGHTBOX
+function closeLightbox() {
+  $('lightbox').classList.add('hidden');
+  $('lb-img').src = '';
+}
 
-// ── TYPING INDICATOR ─────────────────────
-const resizeInput = () => {
-const el = $(‘msg-inp’);
-el.style.height = ‘auto’;
-el.style.height = Math.min(el.scrollHeight, 120) + ‘px’;
-};
-
-// ── DOM EVENTS ────────────────────────────
-function initApp() {
-
-```
-// Auth toggles
-$('goto-register').onclick = () => {
-  $('panel-login').classList.remove('active');
-  $('panel-register').classList.add('active');
-  $('reg-name').focus();
-};
-$('goto-login').onclick = () => {
-  $('panel-register').classList.remove('active');
-  $('panel-login').classList.add('active');
-  $('login-email').focus();
-};
-
-// Avatar selector
-$('avatar-grid').querySelectorAll('.av-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('.av-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentAvatar = btn.dataset.av;
-  };
-});
-
-// Auth buttons
-$('btn-register').addEventListener('term-register', doRegister);
-$('btn-register').onclick = doRegister;
-$('btn-login').addEventListener('term-login', doLogin);
-$('btn-login').onclick = doLogin;
-$('btn-logout').onclick   = () => { if (confirm('¿Salir?')) doLogout(); };
-
-$('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-$('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('login-pass').focus(); });
-$('reg-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
-
-// Channel list
-document.querySelectorAll('.sb-item[data-ch]').forEach(el => {
-  el.onclick = () => switchChannel(el.dataset.ch);
-});
-$('btn-add-ch').onclick = () => {
-  const n = prompt('Nombre del canal (minúsculas):');
-  if (n) addChannel(n);
-};
-
-// Message input
-$('msg-inp').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-});
-$('msg-inp').addEventListener('input', resizeInput);
-$('btn-send').onclick = send;
-
-// File buttons
-$('btn-img').onclick  = () => $('inp-img').click();
-$('btn-file').onclick = () => $('inp-file').click();
-$('inp-img').onchange  = e => { const f = e.target.files[0]; if (f) queueFile(f,'image'); e.target.value=''; };
-$('inp-file').onchange = e => { const f = e.target.files[0]; if (f) queueFile(f,'file');  e.target.value=''; };
-
-// Drag & drop
-const msgsEl = $('messages');
-msgsEl.addEventListener('dragover', e => { e.preventDefault(); msgsEl.style.outline = '1px dashed #333'; });
-msgsEl.addEventListener('dragleave', () => { msgsEl.style.outline = ''; });
-msgsEl.addEventListener('drop', e => {
-  e.preventDefault(); msgsEl.style.outline = '';
-  [...e.dataTransfer.files].forEach(f => queueFile(f, f.type.startsWith('image/') ? 'image' : 'file'));
-});
-
-// Paste image
-document.addEventListener('paste', e => {
-  if (!currentUser) return;
-  [...(e.clipboardData?.items||[])].forEach(item => {
-    if (item.type.startsWith('image/')) {
-      const f = item.getAsFile();
-      if (f) queueFile(f, 'image');
-    }
-  });
-});
-
-// Search
-$('btn-search').onclick = () => {
+// SEARCH
+function toggleSearch() {
   $('searchbar').classList.toggle('hidden');
   if (!$('searchbar').classList.contains('hidden')) $('search-inp').focus();
-};
-$('btn-s-close').onclick = () => { $('searchbar').classList.add('hidden'); $('search-inp').value = ''; };
-$('search-inp').oninput = () => {
+}
+
+function closeSearch() {
+  $('searchbar').classList.add('hidden');
+  $('search-inp').value = '';
+  filterMessages();
+}
+
+function filterMessages() {
   const q = $('search-inp').value.toLowerCase();
   document.querySelectorAll('.msg').forEach(el => {
     el.style.display = (!q || el.textContent.toLowerCase().includes(q)) ? '' : 'none';
   });
-};
-
-// Commands overlay
-$('btn-help').onclick       = () => $('overlay-cmds').classList.remove('hidden');
-$('btn-close-cmds').onclick = () => $('overlay-cmds').classList.add('hidden');
-
-// Lightbox
-$('lb-close').onclick = closeLightbox;
-$('lb-bg').onclick    = closeLightbox;
-
-// ESC
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  closeLightbox();
-  $('overlay-cmds').classList.add('hidden');
-});
-
-// Mobile menu
-$('btn-menu')?.addEventListener('click', () => $('sidebar').classList.toggle('open'));
-```
-
-};
-
-if (document.readyState === ‘loading’) {
-document.addEventListener(‘DOMContentLoaded’, initApp);
-} else {
-initApp();
 }
+
+// INPUT
+function resizeInput() {
+  const el = $('msg-inp');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// DRAG & DROP
+document.addEventListener('DOMContentLoaded', () => {
+  const msgs = $('messages');
+  msgs.addEventListener('dragover', e => { e.preventDefault(); msgs.style.outline = '1px dashed #333'; });
+  msgs.addEventListener('dragleave', () => msgs.style.outline = '');
+  msgs.addEventListener('drop', e => {
+    e.preventDefault(); msgs.style.outline = '';
+    [...e.dataTransfer.files].forEach(f => {
+      if (f.type.startsWith('image/')) {
+        pendingFiles.push({file:f, type:'image'});
+      } else {
+        pendingFiles.push({file:f, type:'file'});
+      }
+      renderPending();
+    });
+  });
+
+  document.addEventListener('paste', e => {
+    if (!currentUser) return;
+    [...(e.clipboardData?.items||[])].forEach(item => {
+      if (item.type.startsWith('image/')) {
+        const f = item.getAsFile();
+        if (f) { pendingFiles.push({file:f,type:'image'}); renderPending(); }
+      }
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeLightbox();
+      $('overlay-cmds').classList.add('hidden');
+    }
+  });
+});
 </script>
 
 </body>
