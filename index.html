@@ -748,7 +748,7 @@ box-shadow: 4px 0 20px rgba(0,0,0,.6);
   </div>
   <div class="auth-actions">
     <button class="btn-primary" id="btn-login">CONECTAR</button>
-    <button class="btn-ghost" id="goto-register">Sin cuenta → Registrarse</button>
+    <button class="btn-ghost" id="goto-register" onclick="document.getElementById('panel-login').classList.remove('active');document.getElementById('panel-register').classList.add('active');document.getElementById('reg-name').focus();">Sin cuenta → Registrarse</button>
   </div>
   <div class="auth-error hidden" id="login-error"></div>
 </div>
@@ -783,7 +783,7 @@ box-shadow: 4px 0 20px rgba(0,0,0,.6);
   </div>
   <div class="auth-actions">
     <button class="btn-primary" id="btn-register">CREAR</button>
-    <button class="btn-ghost" id="goto-login">Ya tengo cuenta → Entrar</button>
+    <button class="btn-ghost" id="goto-login" onclick="document.getElementById('panel-register').classList.remove('active');document.getElementById('panel-login').classList.add('active');document.getElementById('login-email').focus();">Ya tengo cuenta → Entrar</button>
   </div>
   <div class="auth-error hidden" id="reg-error"></div>
 </div>
