@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TERM — Messenger</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>/* ══════════════════════════════════════
+   TERM · INTERNAL MESSENGER
+   Palette: #000 #fff + grays only
+   Font: IBM Plex Mono
+══════════════════════════════════════ */
+
+:root {
+–black:  #000;
+–white:  #fff;
+–g1:     #0d0d0d;
+–g2:     #111;
+–g3:     #1a1a1a;
+–g4:     #222;
+–g5:     #333;
+–g6:     #555;
+–g7:     #888;
+–g8:     #aaa;
+–g9:     #ccc;
+
+–font:   ‘IBM Plex Mono’, ‘Courier New’, monospace;
+–sb-w:   230px;
+–top-h:  44px;
+–border: 1px solid #1e1e1e;
+–border-b: 1px solid #2a2a2a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+font-family: var(–font);
+font-size: 13px;
+line-height: 1.65;
+background: var(–black);
+color: var(–white);
+-webkit-font-smoothing: antialiased;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(–black); }
+::-webkit-scrollbar-thumb { background: var(–g5); }
+::selection { background: var(–white); color: var(–black); }
+
+a { color: var(–g9); }
+a:hover { color: var(–white); }
+
+/* ── SCREENS ── */
+.screen { display: none; height: 100vh; width: 100%; }
+.screen.active { display: flex; }
+
+/* ══════════════════════════════════════
+AUTH
+══════════════════════════════════════ */
+#screen-auth {
+align-items: center;
+justify-content: center;
+background: var(–black);
+}
+
+.auth-wrap {
+width: 360px;
+animation: reveal .45s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes reveal {
+from { opacity: 0; transform: translateY(10px); }
+to   { opacity: 1; transform: none; }
+}
+
+.auth-header {
+border-bottom: var(–border-b);
+padding-bottom: 18px;
+margin-bottom: 28px;
+}
+
+.logo {
+font-size: 26px;
+font-weight: 600;
+letter-spacing: 8px;
+}
+
+.logo-sub {
+font-size: 10px;
+color: var(–g6);
+letter-spacing: 2px;
+margin-top: 4px;
+}
+
+.auth-panel { display: none; flex-direction: column; gap: 18px; }
+.auth-panel.active { display: flex; }
+
+.panel-label {
+font-size: 9px;
+letter-spacing: 3px;
+color: var(–g6);
+margin-bottom: 2px;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 9px; letter-spacing: 2px; color: var(–g6); }
+
+.field-input {
+width: 100%;
+background: var(–g1);
+border: var(–border);
+border-bottom: 1px solid var(–g5);
+color: var(–white);
+font-family: var(–font);
+font-size: 13px;
+padding: 10px 12px;
+outline: none;
+transition: border-bottom-color .15s;
+}
+
+.field-input:focus { border-bottom-color: var(–white); background: var(–g2); }
+.field-input::placeholder { color: var(–g5); }
+
+.avatar-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+.av-btn {
+background: var(–g2);
+border: var(–border);
+color: var(–g7);
+font-family: var(–font);
+font-size: 11px;
+padding: 6px 9px;
+cursor: pointer;
+letter-spacing: 1px;
+transition: all .1s;
+}
+.av-btn:hover { background: var(–g3); color: var(–white); }
+.av-btn.active { background: var(–white); color: var(–black); border-color: var(–white); }
+
+.auth-actions { display: flex; flex-direction: column; gap: 8px; }
+
+.btn-primary {
+background: var(–white);
+border: 1px solid var(–white);
+color: var(–black);
+font-family: var(–font);
+font-size: 12px;
+font-weight: 600;
+letter-spacing: 3px;
+padding: 11px;
+cursor: pointer;
+transition: all .15s;
+width: 100%;
+}
+.btn-primary:hover { background: var(–black); color: var(–white); }
+
+.btn-ghost {
+background: none;
+border: none;
+color: var(–g6);
+font-family: var(–font);
+font-size: 11px;
+padding: 5px 0;
+cursor: pointer;
+text-align: left;
+transition: color .15s;
+}
+.btn-ghost:hover { color: var(–g9); }
+
+.auth-error {
+font-size: 11px;
+color: var(–g9);
+border-left: 2px solid var(–white);
+padding: 6px 10px;
+background: var(–g2);
+line-height: 1.5;
+}
+
+.auth-loader {
+font-size: 11px;
+color: var(–g6);
+letter-spacing: 1px;
+padding: 8px 0;
+}
+
+.auth-footer {
+margin-top: 32px;
+font-size: 9px;
+letter-spacing: 1.5px;
+color: var(–g5);
+border-top: var(–border);
+padding-top: 14px;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.blink-cursor { animation: blink 1.2s step-end infinite; }
+
+/* ══════════════════════════════════════
+CHAT SCREEN
+══════════════════════════════════════ */
+#screen-chat { flex-direction: row; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+width: var(–sb-w);
+min-width: var(–sb-w);
+height: 100%;
+background: var(–g1);
+border-right: var(–border);
+display: flex;
+flex-direction: column;
+overflow: hidden;
+transition: transform .25s cubic-bezier(.16,1,.3,1);
+}
+
+.sb-top {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 13px 15px;
+border-bottom: var(–border);
+}
+
+.brand { font-size: 13px; font-weight: 600; letter-spacing: 5px; }
+
+.sb-user {
+display: flex;
+align-items: center;
+gap: 9px;
+padding: 12px 15px;
+border-bottom: var(–border);
+position: relative;
+}
+
+.sb-av {
+font-size: 10px;
+letter-spacing: 1px;
+background: var(–g3);
+border: var(–border);
+padding: 4px 5px;
+flex-shrink: 0;
+color: var(–white);
+}
+
+.sb-name  { font-size: 12px; font-weight: 600; }
+.sb-email { font-size: 10px; color: var(–g6); word-break: break-all; }
+
+.online-dot {
+width: 5px; height: 5px;
+background: var(–white);
+border-radius: 50%;
+position: absolute;
+right: 13px; top: 50%;
+transform: translateY(-50%);
+}
+
+.sb-section { padding: 14px 0 6px; border-bottom: var(–border); flex-shrink: 0; }
+.sb-label { font-size: 9px; letter-spacing: 3px; color: var(–g5); padding: 0 15px 8px; }
+.sb-list  { list-style: none; }
+
+.sb-item {
+display: flex;
+align-items: center;
+gap: 6px;
+padding: 7px 15px;
+cursor: pointer;
+color: var(–g6);
+font-size: 12px;
+transition: all .1s;
+position: relative;
+}
+.sb-item:hover { background: var(–g2); color: var(–g9); }
+.sb-item.active { color: var(–white); background: var(–g3); }
+.sb-item.active::before { content:’’; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(–white); }
+.ol-item { cursor: default; }
+.ol-item:hover { background: transparent; }
+
+.ch-hash { color: var(–g5); font-size: 11px; }
+.ch-badge {
+margin-left: auto;
+background: var(–white);
+color: var(–black);
+font-size: 9px;
+font-weight: 700;
+padding: 1px 5px;
+}
+
+.sb-add {
+display: block;
+margin: 8px 15px 2px;
+width: calc(100% - 30px);
+background: none;
+border: var(–border);
+border-style: dashed;
+color: var(–g5);
+font-family: var(–font);
+font-size: 11px;
+padding: 6px 10px;
+cursor: pointer;
+text-align: left;
+transition: all .15s;
+}
+.sb-add:hover { color: var(–white); border-color: var(–g5); }
+
+.sb-footer {
+margin-top: auto;
+padding: 10px 15px;
+border-top: var(–border);
+display: flex;
+flex-direction: column;
+gap: 3px;
+}
+
+.sb-stat { display: flex; justify-content: space-between; font-size: 9px; }
+.sk { color: var(–g5); letter-spacing: 1px; }
+.sv { color: var(–g7); }
+
+/* ── ICON BUTTON ── */
+.icon-btn {
+background: none;
+border: none;
+color: var(–g6);
+font-family: var(–font);
+font-size: 15px;
+width: 30px; height: 30px;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer;
+transition: color .1s;
+flex-shrink: 0;
+}
+.icon-btn:hover { color: var(–white); }
+
+/* ── MAIN ── */
+#main {
+flex: 1;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+background: var(–black);
+position: relative;
+}
+
+/* ── TOPBAR ── */
+#topbar {
+height: var(–top-h);
+border-bottom: var(–border);
+display: flex;
+align-items: center;
+padding: 0 15px;
+gap: 10px;
+flex-shrink: 0;
+background: var(–g1);
+}
+
+.tb-left { display: flex; align-items: baseline; gap: 6px; flex: 1; min-width: 0; }
+.tb-hash { color: var(–g5); }
+#tb-name { font-size: 13px; font-weight: 600; }
+.tb-sep  { color: var(–g5); font-size: 11px; }
+.tb-desc { font-size: 11px; color: var(–g6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-right { display: flex; gap: 2px; flex-shrink: 0; }
+
+/* ── SEARCH ── */
+#searchbar {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 7px 15px;
+border-bottom: var(–border);
+background: var(–g2);
+flex-shrink: 0;
+}
+
+.s-prompt { font-size: 11px; color: var(–g5); white-space: nowrap; }
+
+#search-inp {
+flex: 1;
+background: none;
+border: none;
+color: var(–white);
+font-family: var(–font);
+font-size: 13px;
+outline: none;
+}
+#search-inp::placeholder { color: var(–g5); }
+
+/* ── MESSAGES ── */
+#messages {
+flex: 1;
+overflow-y: auto;
+padding: 18px 0 6px;
+display: flex;
+flex-direction: column;
+}
+
+.day-sep {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 10px 20px;
+font-size: 9px;
+letter-spacing: 2px;
+color: var(–g5);
+}
+.day-sep::before, .day-sep::after {
+content: ‘’; flex: 1; height: 1px; background: var(–g3);
+}
+
+.msg {
+display: flex;
+gap: 11px;
+padding: 5px 20px;
+transition: background .08s;
+position: relative;
+}
+.msg:hover { background: var(–g1); }
+.msg:hover .msg-tools { opacity: 1; }
+
+@keyframes msg-in {
+from { opacity: 0; transform: translateY(3px); }
+to   { opacity: 1; transform: none; }
+}
+
+.msg-av {
+font-size: 10px;
+letter-spacing: 1px;
+color: var(–g5);
+flex-shrink: 0;
+width: 34px;
+padding-top: 3px;
+text-align: center;
+font-weight: 500;
+}
+
+.msg-body { flex: 1; min-width: 0; }
+
+.msg-meta {
+display: flex;
+align-items: baseline;
+gap: 8px;
+margin-bottom: 2px;
+}
+
+.msg-name { font-size: 12px; font-weight: 600; color: var(–white); }
+.msg.own .msg-name { color: var(–g9); }
+.msg-time { font-size: 9px; color: var(–g5); }
+
+.msg-text {
+color: var(–g9);
+font-size: 13px;
+line-height: 1.7;
+white-space: pre-wrap;
+word-break: break-word;
+}
+
+.msg-text code {
+background: var(–g3);
+border: var(–border);
+padding: 1px 5px;
+font-size: 11px;
+color: var(–white);
+}
+
+.msg-text pre {
+background: var(–g2);
+border: var(–border);
+border-left: 2px solid var(–g5);
+padding: 10px 12px;
+overflow-x: auto;
+margin-top: 6px;
+}
+
+.msg-text pre code { background: none; border: none; padding: 0; font-size: 12px; }
+
+.msg.sys .msg-text { color: var(–g5); font-style: italic; font-size: 11px; }
+.msg.action .msg-text { color: var(–g7); font-style: italic; }
+
+.msg-tools {
+position: absolute;
+right: 15px; top: 50%;
+transform: translateY(-50%);
+opacity: 0;
+transition: opacity .12s;
+}
+
+.msg-tool {
+background: var(–g3);
+border: var(–border);
+color: var(–g6);
+font-family: var(–font);
+font-size: 10px;
+padding: 3px 8px;
+cursor: pointer;
+transition: all .1s;
+}
+.msg-tool:hover { background: var(–white); color: var(–black); border-color: var(–white); }
+
+/* ── IMAGE ── */
+.msg-img {
+display: block;
+max-width: 280px;
+max-height: 200px;
+margin-top: 8px;
+border: var(–border-b);
+cursor: pointer;
+object-fit: cover;
+transition: border-color .15s;
+}
+.msg-img:hover { border-color: var(–white); }
+
+/* ── FILE ── */
+.msg-file {
+display: inline-flex;
+align-items: center;
+gap: 10px;
+margin-top: 8px;
+padding: 10px 14px;
+background: var(–g2);
+border: var(–border);
+border-left: 2px solid var(–g5);
+cursor: pointer;
+transition: all .15s;
+max-width: 280px;
+}
+.msg-file:hover { border-left-color: var(–white); background: var(–g3); }
+
+.mf-tag  { font-size: 10px; letter-spacing: 1px; color: var(–g6); background: var(–g3); padding: 2px 5px; border: var(–border); }
+.mf-name { display: block; font-size: 12px; color: var(–white); font-weight: 600; }
+.mf-size { display: block; font-size: 10px; color: var(–g6); }
+.mf-dl   { font-size: 14px; color: var(–g6); margin-left: auto; }
+
+/* ── TYPING ── */
+#typing-row {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 3px 20px 3px 65px;
+font-size: 10px;
+color: var(–g5);
+flex-shrink: 0;
+}
+
+.t-dots { display: flex; gap: 3px; }
+.t-dots span { width: 3px; height: 3px; background: var(–g5); border-radius: 50%; animation: td 1.1s infinite; }
+.t-dots span:nth-child(2) { animation-delay: .18s; }
+.t-dots span:nth-child(3) { animation-delay: .36s; }
+@keyframes td { 0%,60%,100%{transform:translateY(0);opacity:.3} 30%{transform:translateY(-3px);opacity:1} }
+
+/* ── COMPOSER ── */
+#composer {
+border-top: var(–border);
+padding: 11px 15px;
+background: var(–g1);
+flex-shrink: 0;
+}
+
+#att-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
+
+.att-chip {
+display: flex;
+align-items: center;
+gap: 6px;
+background: var(–g3);
+border: var(–border);
+padding: 4px 8px;
+font-size: 11px;
+color: var(–g7);
+}
+
+.att-thumb { width: 34px; height: 34px; object-fit: cover; border: var(–border); }
+.att-tag   { font-size: 10px; letter-spacing: 1px; background: var(–g4); padding: 2px 5px; }
+.att-name  { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-rm    { background: none; border: none; color: var(–g5); cursor: pointer; font-size: 11px; transition: color .1s; }
+.att-rm:hover { color: var(–white); }
+
+#composer-row {
+display: flex;
+align-items: flex-end;
+gap: 8px;
+background: var(–g2);
+border: var(–border);
+padding: 8px 10px;
+transition: border-color .15s;
+}
+#composer-row:focus-within { border-color: var(–g5); }
+
+.c-prompt {
+font-size: 11px;
+color: var(–g5);
+white-space: nowrap;
+flex-shrink: 0;
+padding-bottom: 1px;
+}
+
+#msg-inp {
+flex: 1;
+background: none;
+border: none;
+color: var(–white);
+font-family: var(–font);
+font-size: 13px;
+outline: none;
+resize: none;
+max-height: 120px;
+overflow-y: auto;
+line-height: 1.65;
+}
+#msg-inp::placeholder { color: var(–g5); }
+
+.c-tools { display: flex; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+
+.tool-btn {
+background: none;
+border: var(–border);
+color: var(–g6);
+font-family: var(–font);
+font-size: 10px;
+padding: 5px 8px;
+cursor: pointer;
+letter-spacing: .5px;
+transition: all .1s;
+white-space: nowrap;
+}
+.tool-btn:hover { color: var(–white); border-color: var(–g5); background: var(–g3); }
+
+.send-btn {
+background: var(–white);
+border: 1px solid var(–white);
+color: var(–black);
+font-family: var(–font);
+font-size: 15px;
+font-weight: 700;
+width: 32px; height: 32px;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer;
+transition: all .1s;
+flex-shrink: 0;
+}
+.send-btn:hover { background: var(–black); color: var(–white); }
+.send-btn:active { transform: scale(.95); }
+
+.c-hint { margin-top: 6px; font-size: 9px; color: var(–g5); display: flex; gap: 10px; }
+
+kbd {
+background: var(–g3);
+border: var(–border);
+padding: 0 4px;
+font-size: 9px;
+font-family: var(–font);
+color: var(–g7);
+}
+
+/* ══════════════════════════════════════
+OVERLAYS
+══════════════════════════════════════ */
+.overlay {
+position: fixed; inset: 0;
+display: flex; align-items: center; justify-content: center;
+z-index: 500;
+background: rgba(0,0,0,.75);
+backdrop-filter: blur(2px);
+animation: fade .15s ease;
+}
+@keyframes fade { from{opacity:0} to{opacity:1} }
+
+.overlay-box {
+background: var(–g1);
+border: var(–border-b);
+padding: 22px;
+width: 340px;
+max-width: calc(100vw - 32px);
+animation: slide-up .2s cubic-bezier(.16,1,.3,1);
+}
+@keyframes slide-up { from{transform:translateY(8px);opacity:0} to{transform:none;opacity:1} }
+
+.ov-title { font-size: 9px; letter-spacing: 3px; color: var(–g5); margin-bottom: 16px; }
+
+.cmd-table { border-collapse: collapse; width: 100%; margin-bottom: 18px; }
+.cmd-table tr + tr td { padding-top: 8px; }
+.ck { font-size: 12px; color: var(–white); padding-right: 18px; white-space: nowrap; }
+.cv { font-size: 11px; color: var(–g6); }
+
+/* ── LIGHTBOX ── */
+#lightbox {
+position: fixed; inset: 0; z-index: 600;
+display: flex; align-items: center; justify-content: center;
+animation: fade .15s ease;
+}
+
+#lb-bg { position: absolute; inset: 0; background: rgba(0,0,0,.9); backdrop-filter: blur(4px); }
+
+#lb-inner {
+position: relative; z-index: 1;
+display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+#lb-img { max-width: 90vw; max-height: 85vh; border: var(–border-b); display: block; }
+#lb-meta { font-size: 10px; color: var(–g5); letter-spacing: 1px; }
+
+#lb-close {
+position: absolute; top: -14px; right: -14px;
+background: var(–g3); border: var(–border);
+color: var(–g6); font-family: var(–font); font-size: 12px;
+width: 24px; height: 24px; cursor: pointer;
+display: flex; align-items: center; justify-content: center;
+transition: all .1s;
+}
+#lb-close:hover { background: var(–white); color: var(–black); }
+
+/* ── TOAST ── */
+#toast {
+position: fixed; bottom: 18px; right: 18px;
+background: var(–white); color: var(–black);
+font-family: var(–font); font-size: 11px;
+padding: 9px 14px; z-index: 700;
+animation: toast-in .2s cubic-bezier(.16,1,.3,1);
+}
+@keyframes toast-in { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:none} }
+
+/* ── UTILS ── */
+.hidden { display: none !important; }
+.mobile-only { display: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 680px) {
+.mobile-only { display: flex; }
+.tb-desc { display: none; }
+
+#sidebar {
+position: fixed; left: 0; top: 0; bottom: 0; z-index: 300;
+transform: translateX(-100%);
+box-shadow: 4px 0 20px rgba(0,0,0,.6);
+}
+#sidebar.open { transform: translateX(0); }
+
+.auth-wrap { width: calc(100vw - 32px); }
+.msg-img { max-width: 200px; }
+}
+</style>
+
+</head>
+<body>
+
+<!-- ═══════════════════════════
+     AUTH SCREEN
+═══════════════════════════ -->
+
+<div id="screen-auth" class="screen active">
+  <div class="auth-wrap">
+    <header class="auth-header">
+      <div class="logo">TERM</div>
+      <div class="logo-sub">// INTERNAL MESSENGER</div>
+    </header>
+
+```
+<!-- LOGIN -->
+<div class="auth-panel active" id="panel-login">
+  <div class="panel-label">INICIAR SESIÓN</div>
+  <div class="field-group">
+    <label class="field-label">EMAIL</label>
+    <input id="login-email" type="email" class="field-input" placeholder="tu@email.com" autocomplete="email" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">CONTRASEÑA</label>
+    <input id="login-pass" type="password" class="field-input" placeholder="••••••••" />
+  </div>
+  <div class="auth-actions">
+    <button class="btn-primary" id="btn-login">CONECTAR</button>
+    <button class="btn-ghost" id="goto-register">Sin cuenta → Registrarse</button>
+  </div>
+  <div class="auth-error hidden" id="login-error"></div>
+</div>
+
+<!-- REGISTER -->
+<div class="auth-panel" id="panel-register">
+  <div class="panel-label">CREAR CUENTA</div>
+  <div class="field-group">
+    <label class="field-label">NOMBRE</label>
+    <input id="reg-name" type="text" class="field-input" placeholder="Tu Nombre" maxlength="32" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">EMAIL</label>
+    <input id="reg-email" type="email" class="field-input" placeholder="tu@email.com" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">CONTRASEÑA</label>
+    <input id="reg-pass" type="password" class="field-input" placeholder="mín. 6 caracteres" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">AVATAR</label>
+    <div class="avatar-grid" id="avatar-grid">
+      <button class="av-btn active" data-av="[ ]">[ ]</button>
+      <button class="av-btn" data-av="[+]">[+]</button>
+      <button class="av-btn" data-av="[~]">[~]</button>
+      <button class="av-btn" data-av="[#]">[#]</button>
+      <button class="av-btn" data-av="[$]">[$]</button>
+      <button class="av-btn" data-av="[*]">[*]</button>
+      <button class="av-btn" data-av="[!]">[!]</button>
+      <button class="av-btn" data-av="[?]">[?]</button>
+    </div>
+  </div>
+  <div class="auth-actions">
+    <button class="btn-primary" id="btn-register">CREAR</button>
+    <button class="btn-ghost" id="goto-login">Ya tengo cuenta → Entrar</button>
+  </div>
+  <div class="auth-error hidden" id="reg-error"></div>
+</div>
+
+<div class="auth-loader hidden" id="auth-loader">
+  <span class="blink-cursor">█</span> conectando...
+</div>
+
+<footer class="auth-footer">
+  <span class="blink-cursor">█</span> CIFRADO · TIEMPO REAL · USO INTERNO
+</footer>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     CHAT SCREEN
+═══════════════════════════ -->
+
+<div id="screen-chat" class="screen">
+
+  <!-- SIDEBAR -->
+
+  <nav id="sidebar">
+    <div class="sb-top">
+      <div class="brand">TERM</div>
+      <button class="icon-btn" id="btn-logout" title="Salir">⏻</button>
+    </div>
+
+```
+<div class="sb-user" id="sb-user">
+  <div class="sb-av" id="sb-av">[ ]</div>
+  <div class="sb-info">
+    <div class="sb-name" id="sb-name">—</div>
+    <div class="sb-email" id="sb-email">—</div>
+  </div>
+  <div class="online-dot"></div>
+</div>
+
+<div class="sb-section">
+  <div class="sb-label">CANALES</div>
+  <ul class="sb-list" id="channel-list">
+    <li class="sb-item active" data-ch="general">
+      <span class="ch-hash">#</span><span>general</span>
+      <span class="ch-badge hidden">0</span>
+    </li>
+    <li class="sb-item" data-ch="archivos">
+      <span class="ch-hash">#</span><span>archivos</span>
+      <span class="ch-badge hidden">0</span>
+    </li>
+    <li class="sb-item" data-ch="ops">
+      <span class="ch-hash">#</span><span>ops</span>
+      <span class="ch-badge hidden">0</span>
+    </li>
+  </ul>
+  <button class="sb-add" id="btn-add-ch">+ canal</button>
+</div>
+
+<div class="sb-section">
+  <div class="sb-label">EN LÍNEA</div>
+  <ul class="sb-list" id="online-list"></ul>
+</div>
+
+<div class="sb-footer">
+  <div class="sb-stat"><span class="sk">ESTADO</span><span class="sv" id="stat-conn">—</span></div>
+  <div class="sb-stat"><span class="sk">CANAL</span><span class="sv" id="stat-ch">general</span></div>
+</div>
+```
+
+  </nav>
+
+  <!-- MAIN -->
+
+  <main id="main">
+    <div id="topbar">
+      <button class="icon-btn mobile-only" id="btn-menu">≡</button>
+      <div class="tb-left">
+        <span class="tb-hash">#</span>
+        <span id="tb-name">general</span>
+        <span class="tb-sep">—</span>
+        <span class="tb-desc" id="tb-desc">chat general</span>
+      </div>
+      <div class="tb-right">
+        <button class="icon-btn" id="btn-search">⌕</button>
+        <button class="icon-btn" id="btn-help">/</button>
+      </div>
+    </div>
+
+```
+<!-- SEARCH -->
+<div id="searchbar" class="hidden">
+  <span class="s-prompt">buscar ›</span>
+  <input id="search-inp" type="text" placeholder="filtrar mensajes..." />
+  <button class="icon-btn" id="btn-s-close">✕</button>
+</div>
+
+<!-- MESSAGES -->
+<div id="messages" role="log"></div>
+
+<!-- TYPING -->
+<div id="typing-row" class="hidden">
+  <div class="t-dots"><span></span><span></span><span></span></div>
+  <span id="typing-who">escribiendo...</span>
+</div>
+
+<!-- COMPOSER -->
+<div id="composer">
+  <div id="att-preview" class="hidden"></div>
+  <div id="composer-row">
+    <div class="c-prompt" id="c-prompt">› </div>
+    <textarea id="msg-inp" rows="1" placeholder="escribe un mensaje..."></textarea>
+    <div class="c-tools">
+      <button class="tool-btn" id="btn-img">img</button>
+      <button class="tool-btn" id="btn-file">archivo</button>
+      <button class="send-btn" id="btn-send">↵</button>
+    </div>
+  </div>
+  <div class="c-hint"><kbd>Enter</kbd> enviar · <kbd>Shift+Enter</kbd> nueva línea · <kbd>/help</kbd> comandos</div>
+</div>
+
+<input type="file" id="inp-img" accept="image/*" hidden />
+<input type="file" id="inp-file" hidden />
+```
+
+  </main>
+
+  <!-- COMMANDS -->
+
+  <div id="overlay-cmds" class="overlay hidden">
+    <div class="overlay-box">
+      <div class="ov-title">// COMANDOS</div>
+      <table class="cmd-table">
+        <tr><td class="ck">/help</td><td class="cv">mostrar comandos</td></tr>
+        <tr><td class="ck">/nick &lt;n&gt;</td><td class="cv">cambiar nombre</td></tr>
+        <tr><td class="ck">/me &lt;texto&gt;</td><td class="cv">mensaje de acción</td></tr>
+        <tr><td class="ck">/clear</td><td class="cv">limpiar vista local</td></tr>
+        <tr><td class="ck">/shrug</td><td class="cv">¯\_(ツ)_/¯</td></tr>
+        <tr><td class="ck">/flip</td><td class="cv">(╯°□°）╯︵ ┻━┻</td></tr>
+        <tr><td class="ck">/whoami</td><td class="cv">info de sesión</td></tr>
+      </table>
+      <button class="btn-ghost" id="btn-close-cmds">[ cerrar ]</button>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+
+  <div id="lightbox" class="hidden">
+    <div id="lb-bg"></div>
+    <div id="lb-inner">
+      <button id="lb-close">✕</button>
+      <img id="lb-img" src="" alt="" />
+      <div id="lb-meta"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+
+<div id="toast" class="hidden"></div>
+
+<!-- ═══════════════════════════
+     FIREBASE (CDN — sin npm)
+═══════════════════════════ -->
+
+<script type="module">
+  import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword,
+           signInWithEmailAndPassword, signOut,
+           onAuthStateChanged, updateProfile }      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc,
+           query, orderBy, onSnapshot, serverTimestamp,
+           doc, setDoc, getDoc, getDocs,
+           where, limit }                           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  // ── CONFIG ──────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCsnaUlAym1xBy0QnlBehRvm1o8cthOVoI",
+    authDomain:        "terminalmessenger-6040b.firebaseapp.com",
+    projectId:         "terminalmessenger-6040b",
+    storageBucket:     "terminalmessenger-6040b.firebasestorage.app",
+    messagingSenderId: "932577335300",
+    appId:             "1:932577335300:web:cb0e53f8ee72f323e4bd51",
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  // Storage no requerido — archivos se guardan como base64 en Firestore
+
+  // ── STATE ────────────────────────────────
+  let currentUser   = null;
+  let currentAvatar = '[ ]';
+  let activeChannel = 'general';
+  let unsubMessages = null;
+  let unsubOnline   = null;
+  let pendingFiles  = [];
+  let typingTimer   = null;
+  let sessionStart  = Date.now();
+
+  const CHANNELS = {
+    general:  'chat general · todos',
+    archivos: 'compartir archivos · transferencias',
+    ops:      'operaciones · uso interno',
+  };
+
+  // ── UTILS ────────────────────────────────
+  const $  = id => document.getElementById(id);
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const fmt = text => {
+    let s = esc(text);
+    s = s.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+```
+s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+return s;
+```
+
+};
+
+const ftime = ts => {
+if (!ts) return ‘’;
+const d = ts.toDate ? ts.toDate() : new Date(ts);
+return d.toLocaleTimeString([], { hour: ‘2-digit’, minute: ‘2-digit’ });
+};
+
+const fdate = ts => {
+if (!ts) return ‘’;
+const d = ts.toDate ? ts.toDate() : new Date(ts);
+const t = new Date();
+const y = new Date(t); y.setDate(y.getDate() - 1);
+if (d.toDateString() === t.toDateString()) return ‘HOY’;
+if (d.toDateString() === y.toDateString()) return ‘AYER’;
+return d.toLocaleDateString(‘es’, { weekday: ‘short’, month: ‘short’, day: ‘numeric’ }).toUpperCase();
+};
+
+const fsize = b => {
+if (b < 1024) return b + ’ B’;
+if (b < 1048576) return (b/1024).toFixed(1) + ’ KB’;
+return (b/1048576).toFixed(2) + ’ MB’;
+};
+
+const fileTag = name => {
+const ext = (name.split(’.’).pop() || ‘’).toLowerCase();
+const m = { pdf:‘PDF’,doc:‘DOC’,docx:‘DOC’,txt:‘TXT’,md:‘MD’,
+xls:‘XLS’,xlsx:‘XLS’,csv:‘CSV’,zip:‘ZIP’,rar:‘ZIP’,
+mp3:‘MP3’,wav:‘WAV’,mp4:‘MP4’,mov:‘MOV’,
+js:‘JS’,ts:‘TS’,py:‘PY’,html:‘HTM’,css:‘CSS’,json:‘JSON’ };
+return m[ext] || ‘FILE’;
+};
+
+let toastTimer;
+const toast = (msg, ms = 3000) => {
+const el = $(‘toast’);
+el.textContent = msg;
+el.classList.remove(‘hidden’);
+clearTimeout(toastTimer);
+toastTimer = setTimeout(() => el.classList.add(‘hidden’), ms);
+};
+
+// ── AUTH ─────────────────────────────────
+onAuthStateChanged(auth, async user => {
+if (user) {
+// Load avatar from Firestore
+const snap = await getDoc(doc(db, ‘users’, user.uid));
+const data = snap.exists() ? snap.data() : {};
+currentUser = { uid: user.uid, name: user.displayName || ‘Usuario’, email: user.email, avatar: data.avatar || ‘[ ]’ };
+bootChat();
+} else {
+currentUser = null;
+showAuth();
+}
+});
+
+async function doRegister() {
+const name  = $(‘reg-name’).value.trim();
+const email = $(‘reg-email’).value.trim();
+const pass  = $(‘reg-pass’).value;
+const errEl = $(‘reg-error’);
+errEl.classList.add(‘hidden’);
+
+```
+if (!name)         { showErr(errEl, 'Ingresa tu nombre'); return; }
+if (!email)        { showErr(errEl, 'Ingresa tu email'); return; }
+if (pass.length < 6) { showErr(errEl, 'Contraseña mínimo 6 caracteres'); return; }
+
+setLoading(true);
+try {
+  const cred = await createUserWithEmailAndPassword(auth, email, pass);
+  await updateProfile(cred.user, { displayName: name });
+  await setDoc(doc(db, 'users', cred.user.uid), {
+    name, email, avatar: currentAvatar, createdAt: serverTimestamp()
+  });
+} catch (e) {
+  setLoading(false);
+  showErr(errEl, firebaseError(e.code));
+}
+```
+
+}
+
+async function doLogin() {
+const email = $(‘login-email’).value.trim();
+const pass  = $(‘login-pass’).value;
+const errEl = $(‘login-error’);
+errEl.classList.add(‘hidden’);
+
+```
+if (!email || !pass) { showErr(errEl, 'Completa todos los campos'); return; }
+
+setLoading(true);
+try {
+  await signInWithEmailAndPassword(auth, email, pass);
+} catch (e) {
+  setLoading(false);
+  showErr(errEl, firebaseError(e.code));
+}
+```
+
+}
+
+async function doLogout() {
+await setUserOnline(false);
+await signOut(auth);
+}
+
+const showErr = (el, msg) => { el.textContent = msg; el.classList.remove(‘hidden’); };
+const setLoading = on => { $(‘auth-loader’).classList.toggle(‘hidden’, !on); };
+
+const firebaseError = code => ({
+‘auth/email-already-in-use’: ‘Este email ya está registrado’,
+‘auth/invalid-email’:        ‘Email inválido’,
+‘auth/weak-password’:        ‘Contraseña muy débil’,
+‘auth/user-not-found’:       ‘Usuario no encontrado’,
+‘auth/wrong-password’:       ‘Contraseña incorrecta’,
+‘auth/invalid-credential’:   ‘Email o contraseña incorrectos’,
+‘auth/network-request-failed’: ‘Sin conexión a internet’,
+}[code] || ’Error: ’ + code);
+
+// ── PRESENCE (online users) ───────────────
+async function setUserOnline(online) {
+if (!currentUser) return;
+await setDoc(doc(db, ‘presence’, currentUser.uid), {
+name: currentUser.name,
+avatar: currentUser.avatar,
+online,
+lastSeen: serverTimestamp(),
+}, { merge: true });
+}
+
+function listenOnline() {
+if (unsubOnline) unsubOnline();
+const q = query(collection(db, ‘presence’), where(‘online’, ‘==’, true));
+unsubOnline = onSnapshot(q, snap => {
+const list = $(‘online-list’);
+list.innerHTML = ‘’;
+snap.forEach(d => {
+const u = d.data();
+const li = document.createElement(‘li’);
+li.className = ‘sb-item ol-item’;
+li.innerHTML = `<span class="ch-hash">${esc(u.avatar||'[ ]')}</span><span>${esc(u.name)}</span>`;
+list.appendChild(li);
+});
+});
+}
+
+// ── BOOT CHAT ────────────────────────────
+async function bootChat() {
+$(‘screen-auth’).classList.remove(‘active’);
+$(‘screen-chat’).classList.add(‘active’);
+setLoading(false);
+
+```
+$('sb-av').textContent    = currentUser.avatar;
+$('sb-name').textContent  = currentUser.name;
+$('sb-email').textContent = currentUser.email;
+$('stat-conn').textContent = 'EN LÍNEA';
+
+await setUserOnline(true);
+listenOnline();
+switchChannel('general');
+
+// Keepalive
+setInterval(() => setUserOnline(true), 60000);
+
+// Window unload
+window.addEventListener('beforeunload', () => setUserOnline(false));
+```
+
+}
+
+function showAuth() {
+$(‘screen-chat’).classList.remove(‘active’);
+$(‘screen-auth’).classList.add(‘active’);
+$(‘login-email’).focus();
+}
+
+// ── CHANNELS ─────────────────────────────
+function switchChannel(ch) {
+activeChannel = ch;
+
+```
+document.querySelectorAll('.sb-item[data-ch]').forEach(el => {
+  el.classList.toggle('active', el.dataset.ch === ch);
+  if (el.dataset.ch === ch) el.querySelector('.ch-badge')?.classList.add('hidden');
+});
+
+$('tb-name').textContent  = ch;
+$('tb-desc').textContent  = CHANNELS[ch] || 'canal personalizado';
+$('stat-ch').textContent  = ch;
+$('c-prompt').textContent = `@${currentUser.name.split(' ')[0].toLowerCase()} › `;
+
+$('messages').innerHTML = '';
+listenMessages(ch);
+$('sidebar').classList.remove('open');
+```
+
+}
+
+function addChannel(name) {
+const clean = name.toLowerCase().replace(/[^a-z0-9-_]/g,’’).slice(0,20);
+if (!clean || clean.length < 2) { toast(‘Nombre de canal inválido’); return; }
+
+```
+CHANNELS[clean] = `canal personalizado · #${clean}`;
+
+const li = document.createElement('li');
+li.className = 'sb-item';
+li.dataset.ch = clean;
+li.innerHTML = `<span class="ch-hash">#</span><span>${clean}</span><span class="ch-badge hidden">0</span>`;
+li.addEventListener('click', () => switchChannel(clean));
+$('channel-list').appendChild(li);
+switchChannel(clean);
+```
+
+}
+
+// ── MESSAGES (REAL-TIME) ──────────────────
+function listenMessages(channel) {
+if (unsubMessages) unsubMessages();
+
+```
+const q = query(
+  collection(db, 'channels', channel, 'messages'),
+  orderBy('ts', 'asc'),
+  limit(200)
+);
+
+let lastDate = null;
+let initialized = false;
+
+unsubMessages = onSnapshot(q, snap => {
+  snap.docChanges().forEach(change => {
+    if (change.type === 'added') {
+      const msg = { id: change.doc.id, ...change.doc.data() };
+
+      // Day separator
+      const d = fdate(msg.ts);
+      if (d !== lastDate) {
+        const sep = document.createElement('div');
+        sep.className = 'day-sep';
+        sep.textContent = d;
+        $('messages').appendChild(sep);
+        lastDate = d;
+      }
+
+      appendMsg(msg, initialized);
+    }
+  });
+
+  if (!initialized) {
+    initialized = true;
+    scrollBottom();
+  }
+});
+```
+
+}
+
+function appendMsg(msg, animate = true) {
+const el = buildMsgEl(msg);
+if (animate) el.style.animation = ‘msg-in 0.18s cubic-bezier(0.16,1,0.3,1) both’;
+$(‘messages’).appendChild(el);
+if (animate) scrollBottom();
+}
+
+function buildMsgEl(msg) {
+const div = document.createElement(‘div’);
+const isOwn = msg.authorId === currentUser.uid;
+
+```
+if (msg.type === 'sys') {
+  div.className = 'msg sys';
+  div.innerHTML = `<div class="msg-av">·</div><div class="msg-body"><div class="msg-text">${esc(msg.content)}</div></div>`;
+  return div;
+}
+
+div.className = `msg${isOwn ? ' own' : ''}${msg.type === 'action' ? ' action' : ''}`;
+div.dataset.id = msg.id;
+
+const av = document.createElement('div');
+av.className = 'msg-av';
+av.textContent = msg.authorAvatar || '[ ]';
+
+const body = document.createElement('div');
+body.className = 'msg-body';
+
+const meta = document.createElement('div');
+meta.className = 'msg-meta';
+meta.innerHTML = `<span class="msg-name">${esc(msg.authorName || 'Usuario')}</span><span class="msg-time">${ftime(msg.ts)}</span>`;
+
+const txt = document.createElement('div');
+txt.className = 'msg-text';
+if (msg.content) txt.innerHTML = fmt(msg.content);
+
+// Image attachment
+if (msg.imageUrl) {
+  const img = document.createElement('img');
+  img.className = 'msg-img';
+  img.src = msg.imageUrl;
+  img.alt = msg.imageName || 'imagen';
+  img.loading = 'lazy';
+  img.addEventListener('click', () => openLightbox(msg.imageUrl, msg.imageName || 'imagen'));
+  txt.appendChild(img);
+}
+
+// File attachment (base64)
+if (msg.fileData) {
+  const file = document.createElement('div');
+  file.className = 'msg-file';
+  file.innerHTML = `
+    <span class="mf-tag">${fileTag(msg.fileName || '')}</span>
+    <span class="mf-info">
+      <span class="mf-name">${esc(msg.fileName || 'archivo')}</span>
+      <span class="mf-size">${msg.fileSize || ''}</span>
+    </span>
+    <span class="mf-dl">↓</span>
+  `;
+  file.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = msg.fileData;
+    a.download = msg.fileName || 'archivo';
+    a.click();
+  });
+  txt.appendChild(file);
+}
+
+// Reaction / copy tools
+const tools = document.createElement('div');
+tools.className = 'msg-tools';
+tools.innerHTML = `<button class="msg-tool" data-a="copy">copiar</button>`;
+tools.querySelector('[data-a="copy"]').addEventListener('click', () => {
+  navigator.clipboard.writeText(msg.content || '').then(() => toast('Copiado'));
+});
+
+body.appendChild(meta);
+body.appendChild(txt);
+div.appendChild(av);
+div.appendChild(body);
+div.appendChild(tools);
+return div;
+```
+
+}
+
+function scrollBottom() {
+const el = $(‘messages’);
+el.scrollTop = el.scrollHeight;
+}
+
+// ── SEND ─────────────────────────────────
+async function send() {
+const input = $(‘msg-inp’);
+const text  = input.value.trim();
+
+```
+if (!text && pendingFiles.length === 0) return;
+
+if (text.startsWith('/')) {
+  input.value = '';
+  resizeInput();
+  handleCommand(text);
+  return;
+}
+
+const base = {
+  authorId:     currentUser.uid,
+  authorName:   currentUser.name,
+  authorAvatar: currentUser.avatar,
+  ts:           serverTimestamp(),
+  type:         'text',
+  content:      text,
+};
+
+input.value = '';
+resizeInput();
+
+// Archivos como base64 directo en Firestore (sin Storage)
+if (pendingFiles.length > 0) {
+  for (const pf of pendingFiles) {
+    const msgData = { ...base, content: text };
+    try {
+      // Comprimir imagen si es muy grande
+      let data64 = pf.data;
+      if (pf.type === 'image' && pf.file.size > 200 * 1024) {
+        data64 = await compressImage(pf.file, 800, 0.7);
+      }
+      if (pf.type === 'image') {
+        msgData.imageUrl  = data64;
+        msgData.imageName = pf.file.name;
+      } else {
+        msgData.fileData  = data64;
+        msgData.fileName  = pf.file.name;
+        msgData.fileSize  = fsize(pf.file.size);
+        msgData.fileMime  = pf.file.type;
+      }
+    } catch (e) {
+      toast('Error procesando archivo: ' + e.message);
+      continue;
+    }
+    await addDoc(collection(db, 'channels', activeChannel, 'messages'), msgData);
+    base.content = '';
+  }
+  clearPending();
+} else {
+  await addDoc(collection(db, 'channels', activeChannel, 'messages'), base);
+}
+```
+
+}
+
+// ── COMMANDS ─────────────────────────────
+function handleCommand(raw) {
+const parts = raw.slice(1).split(’ ‘);
+const cmd   = parts[0].toLowerCase();
+const args  = parts.slice(1).join(’ ’).trim();
+
+```
+const sysPost = content => addDoc(collection(db, 'channels', activeChannel, 'messages'), {
+  type: 'sys', content,
+  authorId: currentUser.uid,
+  ts: serverTimestamp(),
+});
+
+switch (cmd) {
+  case 'help':
+    $('overlay-cmds').classList.remove('hidden');
+    break;
+  case 'clear':
+    $('messages').innerHTML = '';
+    toast('Vista local limpiada (mensajes en servidor intactos)');
+    break;
+  case 'nick':
+    if (!args) { toast('Uso: /nick <nombre>'); return; }
+    currentUser.name = args.slice(0, 32);
+    updateProfile(auth.currentUser, { displayName: currentUser.name });
+    setDoc(doc(db, 'users', currentUser.uid), { name: currentUser.name }, { merge: true });
+    $('sb-name').textContent = currentUser.name;
+    toast(`Nombre cambiado a: ${currentUser.name}`);
+    break;
+  case 'me':
+    if (!args) return;
+    addDoc(collection(db, 'channels', activeChannel, 'messages'), {
+      type: 'action', content: `${currentUser.name} ${args}`,
+      authorId: currentUser.uid, authorName: currentUser.name,
+      authorAvatar: currentUser.avatar, ts: serverTimestamp(),
+    });
+    break;
+  case 'shrug': sysPost('¯\\_(ツ)_/¯'); break;
+  case 'flip':  sysPost('(╯°□°）╯︵ ┻━┻'); break;
+  case 'whoami':
+    sysPost(`${currentUser.name} · ${currentUser.email} · sesión activa`);
+    break;
+  default:
+    toast(`Comando desconocido: /${cmd}`);
+}
+```
+
+}
+
+// ── IMAGE COMPRESSION ────────────────────
+function compressImage(file, maxW, quality) {
+return new Promise((resolve, reject) => {
+const img = new Image();
+const url = URL.createObjectURL(file);
+img.onload = () => {
+URL.revokeObjectURL(url);
+const canvas = document.createElement(‘canvas’);
+let w = img.width, h = img.height;
+if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+canvas.width = w; canvas.height = h;
+canvas.getContext(‘2d’).drawImage(img, 0, 0, w, h);
+resolve(canvas.toDataURL(‘image/jpeg’, quality));
+};
+img.onerror = reject;
+img.src = url;
+});
+}
+
+// ── FILE HANDLING ─────────────────────────
+function queueFile(file, type) {
+if (type === ‘image’ && file.size > 5 * 1024 * 1024)  { toast(‘Imagen muy grande (máx 5 MB)’); return; }
+if (type === ‘file’  && file.size > 1 * 1024 * 1024)  { toast(‘Archivo máx 1 MB en plan gratuito’); return; }
+const reader = new FileReader();
+reader.onload = e => {
+pendingFiles.push({ file, type, data: e.target.result });
+renderPending();
+};
+reader.readAsDataURL(file);
+}
+
+function renderPending() {
+const area = $(‘att-preview’);
+area.innerHTML = ‘’;
+if (!pendingFiles.length) { area.classList.add(‘hidden’); return; }
+area.classList.remove(‘hidden’);
+
+```
+pendingFiles.forEach((pf, i) => {
+  const chip = document.createElement('div');
+  chip.className = 'att-chip';
+
+  if (pf.type === 'image') {
+    const img = document.createElement('img');
+    img.className = 'att-thumb';
+    img.src = URL.createObjectURL(pf.file);
+    chip.appendChild(img);
+  } else {
+    const tag = document.createElement('span');
+    tag.className = 'att-tag';
+    tag.textContent = fileTag(pf.file.name);
+    chip.appendChild(tag);
+  }
+
+  const name = document.createElement('span');
+  name.className = 'att-name';
+  name.textContent = pf.file.name.length > 20 ? pf.file.name.slice(0,17)+'...' : pf.file.name;
+  chip.appendChild(name);
+
+  const rm = document.createElement('button');
+  rm.className = 'att-rm';
+  rm.textContent = '✕';
+  rm.onclick = () => { pendingFiles.splice(i, 1); renderPending(); };
+  chip.appendChild(rm);
+
+  area.appendChild(chip);
+});
+```
+
+}
+
+function clearPending() {
+pendingFiles = [];
+renderPending();
+}
+
+// ── LIGHTBOX ─────────────────────────────
+const openLightbox = (src, name) => {
+$(‘lb-img’).src = src;
+$(‘lb-meta’).textContent = name;
+$(‘lightbox’).classList.remove(‘hidden’);
+};
+const closeLightbox = () => {
+$(‘lightbox’).classList.add(‘hidden’);
+$(‘lb-img’).src = ‘’;
+};
+
+// ── TYPING INDICATOR ─────────────────────
+const resizeInput = () => {
+const el = $(‘msg-inp’);
+el.style.height = ‘auto’;
+el.style.height = Math.min(el.scrollHeight, 120) + ‘px’;
+};
+
+// ── DOM EVENTS ────────────────────────────
+document.addEventListener(‘DOMContentLoaded’, () => {
+
+```
+// Auth toggles
+$('goto-register').onclick = () => {
+  $('panel-login').classList.remove('active');
+  $('panel-register').classList.add('active');
+  $('reg-name').focus();
+};
+$('goto-login').onclick = () => {
+  $('panel-register').classList.remove('active');
+  $('panel-login').classList.add('active');
+  $('login-email').focus();
+};
+
+// Avatar selector
+$('avatar-grid').querySelectorAll('.av-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.av-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentAvatar = btn.dataset.av;
+  };
+});
+
+// Auth buttons
+$('btn-register').onclick = doRegister;
+$('btn-login').onclick    = doLogin;
+$('btn-logout').onclick   = () => { if (confirm('¿Salir?')) doLogout(); };
+
+$('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('login-pass').focus(); });
+$('reg-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+
+// Channel list
+document.querySelectorAll('.sb-item[data-ch]').forEach(el => {
+  el.onclick = () => switchChannel(el.dataset.ch);
+});
+$('btn-add-ch').onclick = () => {
+  const n = prompt('Nombre del canal (minúsculas):');
+  if (n) addChannel(n);
+};
+
+// Message input
+$('msg-inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+$('msg-inp').addEventListener('input', resizeInput);
+$('btn-send').onclick = send;
+
+// File buttons
+$('btn-img').onclick  = () => $('inp-img').click();
+$('btn-file').onclick = () => $('inp-file').click();
+$('inp-img').onchange  = e => { const f = e.target.files[0]; if (f) queueFile(f,'image'); e.target.value=''; };
+$('inp-file').onchange = e => { const f = e.target.files[0]; if (f) queueFile(f,'file');  e.target.value=''; };
+
+// Drag & drop
+const msgsEl = $('messages');
+msgsEl.addEventListener('dragover', e => { e.preventDefault(); msgsEl.style.outline = '1px dashed #333'; });
+msgsEl.addEventListener('dragleave', () => { msgsEl.style.outline = ''; });
+msgsEl.addEventListener('drop', e => {
+  e.preventDefault(); msgsEl.style.outline = '';
+  [...e.dataTransfer.files].forEach(f => queueFile(f, f.type.startsWith('image/') ? 'image' : 'file'));
+});
+
+// Paste image
+document.addEventListener('paste', e => {
+  if (!currentUser) return;
+  [...(e.clipboardData?.items||[])].forEach(item => {
+    if (item.type.startsWith('image/')) {
+      const f = item.getAsFile();
+      if (f) queueFile(f, 'image');
+    }
+  });
+});
+
+// Search
+$('btn-search').onclick = () => {
+  $('searchbar').classList.toggle('hidden');
+  if (!$('searchbar').classList.contains('hidden')) $('search-inp').focus();
+};
+$('btn-s-close').onclick = () => { $('searchbar').classList.add('hidden'); $('search-inp').value = ''; };
+$('search-inp').oninput = () => {
+  const q = $('search-inp').value.toLowerCase();
+  document.querySelectorAll('.msg').forEach(el => {
+    el.style.display = (!q || el.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+};
+
+// Commands overlay
+$('btn-help').onclick       = () => $('overlay-cmds').classList.remove('hidden');
+$('btn-close-cmds').onclick = () => $('overlay-cmds').classList.add('hidden');
+
+// Lightbox
+$('lb-close').onclick = closeLightbox;
+$('lb-bg').onclick    = closeLightbox;
+
+// ESC
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeLightbox();
+  $('overlay-cmds').classList.add('hidden');
+});
+
+// Mobile menu
+$('btn-menu')?.addEventListener('click', () => $('sidebar').classList.toggle('open'));
+```
+
+});
+</script>
+
+</body>
+</html>
