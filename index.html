@@ -747,7 +747,7 @@ box-shadow: 4px 0 20px rgba(0,0,0,.6);
     <input id="login-pass" type="password" class="field-input" placeholder="••••••••" />
   </div>
   <div class="auth-actions">
-    <button class="btn-primary" id="btn-login">CONECTAR</button>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">CONECTAR</button>
     <button class="btn-ghost" id="goto-register" onclick="document.getElementById('panel-login').classList.remove('active');document.getElementById('panel-register').classList.add('active');document.getElementById('reg-name').focus();">Sin cuenta → Registrarse</button>
   </div>
   <div class="auth-error hidden" id="login-error"></div>
@@ -782,7 +782,7 @@ box-shadow: 4px 0 20px rgba(0,0,0,.6);
     </div>
   </div>
   <div class="auth-actions">
-    <button class="btn-primary" id="btn-register">CREAR</button>
+    <button class="btn-primary" id="btn-register" onclick="doRegister()">CREAR</button>
     <button class="btn-ghost" id="goto-login" onclick="document.getElementById('panel-register').classList.remove('active');document.getElementById('panel-login').classList.add('active');document.getElementById('login-email').focus();">Ya tengo cuenta → Entrar</button>
   </div>
   <div class="auth-error hidden" id="reg-error"></div>
@@ -950,6 +950,8 @@ box-shadow: 4px 0 20px rgba(0,0,0,.6);
 ═══════════════════════════ -->
 
 <script type="module">
+window._firebaseReady = false;
+
   import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword,
            signInWithEmailAndPassword, signOut,
@@ -1061,7 +1063,7 @@ showAuth();
 }
 });
 
-async function doRegister() {
+window.doRegister = async function doRegister() {
 const name  = $(‘reg-name’).value.trim();
 const email = $(‘reg-email’).value.trim();
 const pass  = $(‘reg-pass’).value;
@@ -1088,7 +1090,7 @@ try {
 
 }
 
-async function doLogin() {
+window.doLogin = async function doLogin() {
 const email = $(‘login-email’).value.trim();
 const pass  = $(‘login-pass’).value;
 const errEl = $(‘login-error’);
@@ -1587,8 +1589,10 @@ $('avatar-grid').querySelectorAll('.av-btn').forEach(btn => {
 });
 
 // Auth buttons
+$('btn-register').addEventListener('term-register', doRegister);
 $('btn-register').onclick = doRegister;
-$('btn-login').onclick    = doLogin;
+$('btn-login').addEventListener('term-login', doLogin);
+$('btn-login').onclick = doLogin;
 $('btn-logout').onclick   = () => { if (confirm('¿Salir?')) doLogout(); };
 
 $('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
