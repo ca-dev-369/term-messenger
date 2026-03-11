@@ -147,6 +147,10 @@ html,body{height:100%;overflow:hidden;background:#000;color:#fff;font-family:'IB
     <input id="reg-pass" type="password" class="field-input" placeholder="min. 6 caracteres"/>
   </div>
   <div class="field-group">
+    <label class="field-label">CODIGO DE ACCESO</label>
+    <input id="reg-code" type="password" class="field-input" placeholder="codigo de invitacion"/>
+  </div>
+  <div class="field-group">
     <label class="field-label">AVATAR</label>
     <div class="avatar-grid" id="avatar-grid">
       <button class="av-btn active" onclick="selectAvatar(this,'[ ]')">[ ]</button>
@@ -367,9 +371,11 @@ function doRegister() {
   const pass = $('reg-pass').value;
   $('reg-error').style.display = 'none';
 
+  const code = document.getElementById('reg-code') ? document.getElementById('reg-code').value : '';
   if (!name) { showErr('reg-error', 'Ingresa tu nombre'); return; }
   if (!email) { showErr('reg-error', 'Ingresa tu email'); return; }
   if (pass.length < 6) { showErr('reg-error', 'Contrasena minimo 6 caracteres'); return; }
+  if (code !== 'workDesk01') { showErr('reg-error', 'Codigo de acceso invalido'); return; }
 
   auth.createUserWithEmailAndPassword(email, pass)
     .then(cred => {
